@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Athlete OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #07040d;
+  --text: #ece6f5;
+  --text-2: #a99fbd;
+  --muted: #6e6482;
+  --line: rgba(196, 160, 255, 0.14);
+  --panel: rgba(16, 10, 28, 0.62);
+  --gold: #f5c451;
+  --green: #3dff9a;
+  --red: #ff5a6e;
+  --run: #3dff9a;
+  --bike: #4d8dff;
+  --lift: #f5c451;
+  --swim: #2fd9e8;
+  --other: #8a8f98;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--mono); color: var(--text); overflow: hidden;
+  background: radial-gradient(ellipse 80% 70% at 50% 45%, #1e0f38 0%, #0d0619 55%, var(--bg) 100%);
+}
+#stars { position: fixed; inset: 0; z-index: 0; }
+.floor {
+  position: fixed; left: -50%; right: -50%; bottom: -10%; height: 60%; z-index: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(196,160,255,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(196,160,255,0.22) 1px, transparent 1px);
+  background-size: 60px 60px;
+  transform: perspective(500px) rotateX(72deg); transform-origin: bottom center;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 85%); mask-image: linear-gradient(to top, #000 0%, transparent 85%);
+}
+.os { position: relative; z-index: 1; height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+
+/* top bar */
+.top { display: flex; align-items: center; gap: 22px; padding: 12px 20px; border-bottom: 1px solid var(--line); background: rgba(7,4,13,0.5); backdrop-filter: blur(6px); }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: 0.3em; font-size: 14px; }
+.logo i { width: 10px; height: 10px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 12px var(--gold); }
+.status { font-size: 11px; letter-spacing: 0.14em; color: var(--text-2); display: flex; gap: 16px; flex-wrap: wrap; }
+.status b { color: var(--green); font-weight: 600; }
+.status .g { color: var(--gold); }
+.clock { margin-left: auto; font-size: 15px; letter-spacing: 0.12em; color: var(--gold); font-variant-numeric: tabular-nums; }
+
+/* layout */
+.main { display: grid; grid-template-columns: 300px 1fr 280px; min-height: 0; }
+.rail { padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 0; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; backdrop-filter: blur(4px); }
+.lbl { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+.north .big { font-size: 64px; font-weight: 800; color: var(--gold); line-height: 1; margin-top: 8px; text-shadow: 0 0 24px rgba(245,196,81,0.45); }
+.north .big small { font-size: 14px; font-weight: 400; color: var(--text-2); margin-left: 6px; text-shadow: none; }
+.north .sub { font-size: 12px; color: var(--text-2); margin-top: 6px; }
+.vital { display: grid; grid-template-columns: 10px 1fr auto; gap: 4px 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.vital:last-child { border-bottom: 0; }
+.vital i { width: 8px; height: 8px; border-radius: 50%; align-self: center; }
+.vital .k { font-size: 12px; color: var(--text-2); }
+.vital .v { font-size: 17px; font-weight: 600; text-align: right; }
+.vital .v small { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 3px; }
+.vital .n { grid-column: 2 / 4; font-size: 10.5px; color: var(--muted); margin-top: -2px; }
+.good { color: var(--green); } .warn { color: var(--gold); } .bad { color: var(--red); }
+ol.dir { margin: 8px 0 0; padding: 0; list-style: none; counter-reset: d; }
+ol.dir li { counter-increment: d; display: grid; grid-template-columns: 22px 1fr; gap: 6px; padding: 7px 0; font-size: 12.5px; line-height: 1.45; border-bottom: 1px solid var(--line); }
+ol.dir li:last-child { border-bottom: 0; }
+ol.dir li::before { content: counter(d, decimal-leading-zero); color: var(--gold); font-weight: 600; }
+
+/* center */
+.center { position: relative; min-width: 0; min-height: 0; }
+#graph { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+#graph.drag { cursor: grabbing; }
+.callout { position: absolute; pointer-events: none; min-width: 190px; padding: 10px 12px; border: 1px solid var(--gold); border-radius: 8px; background: rgba(20, 12, 4, 0.82); box-shadow: 0 0 22px rgba(245,196,81,0.25); font-size: 12px; }
+.callout .t { color: var(--gold); font-size: 10px; letter-spacing: 0.2em; margin-bottom: 4px; }
+.callout .nm { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.callout .row { display: flex; justify-content: space-between; gap: 14px; color: var(--text-2); }
+.callout .row b { color: var(--text); font-weight: 600; }
+.primary { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); text-align: center; pointer-events: none; }
+.primary .lbl { color: var(--gold); }
+.primary .count { font-size: 30px; font-weight: 800; letter-spacing: 0.08em; margin-top: 4px; font-variant-numeric: tabular-nums; text-shadow: 0 0 18px rgba(245,196,81,0.4); }
+.primary .count span { color: var(--muted); font-weight: 300; font-size: 16px; margin: 0 4px 0 2px; }
+.hint { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 10px; letter-spacing: 0.18em; color: var(--muted); pointer-events: none; white-space: nowrap; }
+
+/* right rail */
+.deck { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.deck button, .newchat { font-family: var(--mono); font-size: 11.5px; color: var(--text); background: rgba(196,160,255,0.06); border: 1px solid var(--line); border-radius: 8px; padding: 10px 8px; cursor: pointer; text-align: left; transition: border-color .15s, background .15s; }
+.deck button:hover, .newchat:hover { border-color: var(--gold); background: rgba(245,196,81,0.08); }
+.deck button span { display: block; color: var(--gold); font-size: 15px; margin-bottom: 3px; }
+.newchat { width: 100%; text-align: center; border-style: dashed; color: var(--gold); }
+.out { margin-top: 10px; font-size: 12px; line-height: 1.5; color: var(--text-2); min-height: 54px; border-left: 2px solid var(--gold); padding-left: 10px; }
+.out b { color: var(--text); }
+.search { width: 100%; font-family: var(--mono); font-size: 12.5px; color: var(--text); background: rgba(7,4,13,0.6); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.search:focus { outline: 1px solid var(--gold); }
+.found { font-size: 11px; color: var(--muted); margin-top: 6px; min-height: 14px; }
+#legend > div { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12.5px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+.legend b { margin-left: auto; font-weight: 600; }
+#tip { position: fixed; z-index: 9; pointer-events: none; opacity: 0; background: rgba(12,7,22,0.95); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12px; min-width: 170px; }
+#tip .t { color: var(--muted); font-size: 10.5px; margin-bottom: 3px; }
+#tip .r { display: flex; justify-content: space-between; gap: 14px; color: var(--text-2); }
+#tip .r b { color: var(--text); }
+
+@media (max-width: 1100px) { .main { grid-template-columns: 260px 1fr; } .right { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } body { overflow: auto; } .os { height: auto; } .center { min-height: 560px; } }
+@media (max-width: 720px) {
+  .top { flex-wrap: wrap; gap: 8px 16px; padding: 10px 16px; }
+  .main { grid-template-columns: 1fr; }
+  .center { order: -1; min-height: 70vh; }
+  .rail { padding: 12px 16px; }
+  .right { grid-template-columns: 1fr; }
+  .primary .count { font-size: 22px; }
+  .hint { display: none; }
+}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div class="floor"></div>
+<div class="os">
+  <div class="top">
+    <div class="logo"><i></i>ATHLETE · OS</div>
+    <div class="status"><span>CORE <b>IDLE</b></span><span>GARMIN <b>ONLINE</b></span><span><span class="g" id="nnodes"></span> NODES</span></div>
+    <div class="clock" id="clock"></div>
+  </div>
+  <div class="main">
+    <div class="rail left">
+      <div class="box north">
+        <div class="lbl">North Star</div>
+        <div class="big" id="ns-days"></div>
+        <div class="sub" id="ns-sub"></div>
+      </div>
+      <div class="box">
+        <div class="lbl">Body vitals</div>
+        <div id="vitals"></div>
+      </div>
+      <div class="box">
+        <div class="lbl">Directives · today</div>
+        <ol class="dir" id="dirs"></ol>
+      </div>
+    </div>
+    <div class="center">
+      <canvas id="graph"></canvas>
+      <div class="hint">DRAG TO ROTATE · HOVER A NODE</div>
+      <div class="callout" id="callout"></div>
+      <div class="primary">
+        <div class="lbl">Primary directive · days to the start line</div>
+        <div class="count" id="count"></div>
+      </div>
+    </div>
+    <div class="rail right">
+      <div class="box">
+        <div class="lbl">Command deck</div>
+        <div class="deck">
+          <button data-c="recovery"><span>◎</span>Recovery check</button>
+          <button data-c="plan"><span>▤</span>Plan today</button>
+          <button data-c="watch"><span>⌚</span>Send to watch</button>
+          <button data-c="race"><span>⚑</span>Race week</button>
+          <button data-c="recap"><span>↺</span>Weekly recap</button>
+          <button data-c="coach"><span>✉</span>Ask my coach</button>
+        </div>
+        <div class="out" id="out">Select a command.</div>
+      </div>
+      <button class="newchat" id="newchat">+ new OS chat</button>
+      <div class="box">
+        <div class="lbl">Search nodes</div>
+        <input class="search" id="search" placeholder="run, golf, Oct, Ottawa…" style="margin-top:10px" autocomplete="off">
+        <div class="found" id="found"></div>
+      </div>
+      <div class="box legend">
+        <div class="lbl" style="padding:0 0 4px">Legend</div>
+        <div id="legend"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="tip"></div>
+<script>
+const D = {"race":{"name":"Half Marathon","date":"2027-02-14"},"weeks":["2024-07-15","2024-07-22","2024-07-29","2024-08-05","2024-08-12","2024-08-19","2024-08-26","2024-09-02","2024-09-09","2024-09-16","2024-09-23","2024-09-30","2024-10-07","2024-10-14","2024-10-21","2024-10-28","2024-11-04","2024-11-11","2024-11-18","2024-11-25","2024-12-02","2024-12-09","2024-12-16","2024-12-23","2024-12-30","2025-01-06","2025-01-13","2025-01-20","2025-01-27","2025-02-03","2025-02-10","2025-02-17","2025-02-24","2025-03-03","2025-03-10","2025-03-17","2025-03-24","2025-03-31","2025-04-07","2025-04-14","2025-04-21","2025-04-28","2025-05-05","2025-05-12","2025-05-19","2025-05-26","2025-06-02","2025-06-09","2025-06-16","2025-06-23","2025-06-30","2025-07-07","2025-07-14","2025-07-21","2025-07-28","2025-08-04","2025-08-11","2025-08-18","2025-08-25","2025-09-01","2025-09-08","2025-09-15","2025-09-22","2025-09-29","2025-10-06","2025-10-13","2025-10-20","2025-10-27","2025-11-03","2025-11-10","2025-11-17","2025-11-24","2025-12-01","2025-12-08","2025-12-15","2025-12-22","2025-12-29","2026-01-05","2026-01-12","2026-01-19","2026-01-26","2026-02-02","2026-02-09","2026-02-16","2026-02-23","2026-03-02","2026-03-09","2026-03-16","2026-03-23","2026-03-30","2026-04-06","2026-04-13","2026-04-20","2026-04-27","2026-05-04","2026-05-11","2026-05-18","2026-05-25","2026-06-01","2026-06-08","2026-06-15","2026-06-22","2026-06-29","2026-07-06","2026-07-13","2026-07-20","2026-07-27","2026-08-03","2026-08-10","2026-08-17","2026-08-24","2026-08-31","2026-09-07","2026-09-14","2026-09-21","2026-09-28","2026-10-05","2026-10-12","2026-10-19","2026-10-26"],"nodes":[{"id":20905010533,"w":0,"k":"other","type":"indoor cardio","name":"Cardio","d":"2024-07-15 19:22","min":20.1,"mi":0.0,"hr":116},{"id":20905014321,"w":0,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2024-07-16 10:12","min":102.1,"mi":21.53,"hr":128},{"id":16447556798,"w":0,"k":"other","type":"other","name":"Other","d":"2024-07-16 16:46","min":54.8,"mi":0.0,"hr":81},{"id":16447621332,"w":0,"k":"other","type":"stair climbing","name":"Stair Stepper","d":"2024-07-16 17:43","min":6.2,"mi":0.0,"hr":123},{"id":20905017076,"w":0,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2024-07-19 11:33","min":107.2,"mi":21.51,"hr":124},{"id":20905022845,"w":1,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2024-07-22 10:56","min":116.1,"mi":23.73,"hr":129},{"id":20905025310,"w":1,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2024-07-23 10:44","min":103.8,"mi":19.18,"hr":121},{"id":20905032387,"w":1,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2024-07-26 11:00","min":194.1,"mi":34.44,"hr":136},{"id":20905037189,"w":1,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2024-07-28 11:33","min":104.5,"mi":19.09,"hr":126},{"id":20905042077,"w":2,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2024-07-30 16:11","min":97.3,"mi":19.13,"hr":129},{"id":16765813751,"w":2,"k":"run","type":"running","name":"Ottawa Running","d":"2024-07-30 19:35","min":32.8,"mi":2.68,"hr":154},{"id":20905045864,"w":3,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2024-08-10 13:38","min":69.7,"mi":15.31,"hr":126},{"id":17014814023,"w":7,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2024-09-02 16:50","min":135.8,"mi":13.68,"hr":100},{"id":20905056027,"w":44,"k":"other","type":"golf","name":"Ottawa Walking","d":"2025-05-24 11:53","min":411.4,"mi":1.63,"hr":89},{"id":20918232514,"w":68,"k":"other","type":"other","name":"Ottawa Other","d":"2025-11-06 20:12","min":38.0,"mi":0.12,"hr":86},{"id":20982167100,"w":69,"k":"run","type":"running","name":"Evening run","d":"2025-11-13 18:13","min":34.7,"mi":3.75,"hr":null},{"id":21028847539,"w":70,"k":"run","type":"treadmill running","name":"Benchmark Run","d":"2025-11-18 18:56","min":9.0,"mi":1.0,"hr":166},{"id":21029195064,"w":70,"k":"other","type":"other","name":"Other","d":"2025-11-18 19:07","min":69.5,"mi":0.0,"hr":113},{"id":21038080858,"w":70,"k":"run","type":"treadmill running","name":"Easy Run","d":"2025-11-19 18:02","min":30.0,"mi":2.71,"hr":139},{"id":21099764156,"w":71,"k":"run","type":"running","name":"Ottawa - W01D2-Intervals","d":"2025-11-25 18:11","min":22.8,"mi":1.72,"hr":125},{"id":21110022922,"w":71,"k":"run","type":"treadmill running","name":"W01D4-Intervals","d":"2025-11-27 18:02","min":20.2,"mi":1.58,"hr":125},{"id":21122266905,"w":71,"k":"other","type":"other","name":"Other","d":"2025-11-28 20:48","min":49.0,"mi":0.0,"hr":85},{"id":21132775524,"w":71,"k":"run","type":"treadmill running","name":"W01D7-Intervals","d":"2025-11-30 10:14","min":30.9,"mi":1.85,"hr":127},{"id":21143409603,"w":72,"k":"other","type":"other","name":"Ottawa Other","d":"2025-12-01 13:35","min":49.3,"mi":0.11,"hr":104},{"id":21164166131,"w":72,"k":"other","type":"other","name":"Ottawa Other","d":"2025-12-03 18:23","min":55.6,"mi":0.02,"hr":93},{"id":21171992705,"w":72,"k":"run","type":"treadmill running","name":"W02D4-Intervals","d":"2025-12-04 18:31","min":30.0,"mi":2.22,"hr":125},{"id":21187347622,"w":72,"k":"run","type":"running","name":"Ottawa - W02D6-Brisk Walk","d":"2025-12-06 13:36","min":60.1,"mi":4.63,"hr":123},{"id":21197255716,"w":72,"k":"run","type":"treadmill running","name":"W02D7-Intervals","d":"2025-12-07 16:54","min":30.0,"mi":2.33,"hr":121},{"id":21223391467,"w":73,"k":"run","type":"treadmill running","name":"W03D4-Intervals","d":"2025-12-10 14:08","min":27.0,"mi":2.03,"hr":125},{"id":21272244370,"w":74,"k":"run","type":"treadmill running","name":"W04D3-Recovery Run","d":"2025-12-15 17:27","min":25.0,"mi":2.01,"hr":127},{"id":21406297973,"w":74,"k":"other","type":"golf","name":"St Catharines Walking","d":"2025-12-20 13:12","min":6.5,"mi":0.23,"hr":85},{"id":21406381113,"w":76,"k":"run","type":"treadmill running","name":"W04D6-5K Race","d":"2025-12-31 16:08","min":11.0,"mi":0.98,"hr":146},{"id":21406490268,"w":76,"k":"run","type":"treadmill running","name":"Treadmill Running","d":"2025-12-31 16:24","min":11.8,"mi":1.24,"hr":156},{"id":21420738374,"w":76,"k":"other","type":"golf","name":"Ottawa Walking","d":"2026-01-01 16:16","min":43.7,"mi":2.93,"hr":97},{"id":21423467916,"w":76,"k":"other","type":"golf","name":"Gatineau Walking","d":"2026-01-02 12:38","min":115.0,"mi":3.44,"hr":89},{"id":21424663928,"w":76,"k":"run","type":"treadmill running","name":"W04D7-Recovery Run","d":"2026-01-02 17:06","min":30.0,"mi":1.76,"hr":133},{"id":21435991153,"w":76,"k":"other","type":"yoga","name":"Yoga","d":"2026-01-02 19:30","min":68.5,"mi":0.0,"hr":101},{"id":21435991642,"w":76,"k":"other","type":"golf","name":"Walking","d":"2026-01-03 21:19","min":35.5,"mi":1.55,"hr":116},{"id":21444232877,"w":76,"k":"other","type":"golf","name":"Ottawa Walking","d":"2026-01-04 11:19","min":86.5,"mi":3.8,"hr":82},{"id":21459716854,"w":77,"k":"other","type":"other","name":"Other","d":"2026-01-05 17:28","min":40.1,"mi":0.0,"hr":113},{"id":21477951032,"w":77,"k":"run","type":"treadmill running","name":"Treadmill Running","d":"2026-01-06 17:41","min":24.5,"mi":2.2,"hr":154},{"id":21477952388,"w":77,"k":"run","type":"running","name":"Ottawa Running","d":"2026-01-07 19:20","min":50.5,"mi":3.62,"hr":101},{"id":21480717747,"w":77,"k":"other","type":"golf","name":"Ottawa Walking","d":"2026-01-07 20:19","min":40.7,"mi":1.06,"hr":90},{"id":21517770801,"w":77,"k":"other","type":"other","name":"Other","d":"2026-01-11 17:10","min":56.3,"mi":0.0,"hr":160},{"id":21550552872,"w":78,"k":"run","type":"running","name":"Ottawa - W02D4-Steady Run","d":"2026-01-14 18:23","min":60.0,"mi":4.86,"hr":161},{"id":21564432111,"w":78,"k":"run","type":"treadmill running","name":"W02D6a-Recovery Run","d":"2026-01-16 06:06","min":30.0,"mi":2.89,"hr":141},{"id":21570632091,"w":78,"k":"run","type":"treadmill running","name":"W02D6b-Hills","d":"2026-01-16 18:22","min":44.0,"mi":3.84,"hr":162},{"id":21580358823,"w":78,"k":"run","type":"running","name":"Ottawa - W02D7-Long Run","d":"2026-01-17 14:32","min":79.2,"mi":6.34,"hr":142},{"id":21591986419,"w":78,"k":"run","type":"running","name":"Ottawa - W03D1a-Recovery Run","d":"2026-01-18 16:42","min":40.0,"mi":3.18,"hr":139},{"id":21603227473,"w":79,"k":"run","type":"running","name":"Ottawa - W03D2b-Intervals","d":"2026-01-19 19:22","min":56.0,"mi":5.08,"hr":152},{"id":21614828176,"w":79,"k":"run","type":"treadmill running","name":"W03D3a-Easy Run","d":"2026-01-20 17:42","min":30.0,"mi":2.47,"hr":141},{"id":21635091582,"w":79,"k":"run","type":"running","name":"Ottawa - W03D4b-Steady Run","d":"2026-01-22 18:13","min":60.0,"mi":5.58,"hr":156},{"id":21653214467,"w":79,"k":"run","type":"treadmill running","name":"W03D7-Long Run","d":"2026-01-24 12:16","min":105.0,"mi":9.4,"hr":142},{"id":21665728592,"w":79,"k":"run","type":"treadmill running","name":"W04D1a-Recovery Run","d":"2026-01-25 20:46","min":40.1,"mi":3.19,"hr":137},{"id":21675985646,"w":80,"k":"run","type":"treadmill running","name":"W04D2b-Intervals","d":"2026-01-26 21:52","min":50.5,"mi":4.74,"hr":160},{"id":21696013006,"w":80,"k":"run","type":"running","name":"Ottawa - W04D4b-Steady Run","d":"2026-01-28 17:22","min":55.2,"mi":4.98,"hr":153},{"id":21725039190,"w":80,"k":"run","type":"running","name":"Ottawa - W04D7-Long Run","d":"2026-01-31 14:54","min":105.1,"mi":9.02,"hr":139},{"id":21746930925,"w":81,"k":"run","type":"treadmill running","name":"W05D2b-Intervals","d":"2026-02-02 21:33","min":58.0,"mi":5.79,"hr":168},{"id":21767955470,"w":81,"k":"run","type":"running","name":"Ottawa - W05D4b-Intervals","d":"2026-02-04 18:44","min":54.0,"mi":5.0,"hr":158},{"id":21806212097,"w":81,"k":"run","type":"treadmill running","name":"W05D7-Long Run","d":"2026-02-08 10:20","min":120.0,"mi":11.29,"hr":141},{"id":21840095019,"w":82,"k":"run","type":"running","name":"Ottawa - W06D2-Threshold Run","d":"2026-02-11 17:03","min":36.3,"mi":3.87,"hr":167},{"id":21895456762,"w":82,"k":"run","type":"running","name":"Whitby - W06D7-Long Run","d":"2026-02-15 15:33","min":35.5,"mi":2.97,"hr":132},{"id":21902261297,"w":83,"k":"run","type":"running","name":"Ottawa - W07D2b-Threshold Run","d":"2026-02-17 18:53","min":50.1,"mi":5.09,"hr":158},{"id":21912724383,"w":83,"k":"run","type":"running","name":"Ottawa - W07D4b-Intervals","d":"2026-02-18 18:02","min":60.2,"mi":5.97,"hr":162},{"id":21942782770,"w":83,"k":"run","type":"running","name":"Ottawa - W07D7-Long Run","d":"2026-02-21 13:37","min":148.3,"mi":13.67,"hr":153},{"id":21964572435,"w":84,"k":"run","type":"running","name":"Ottawa - W08D2b-Threshold Run","d":"2026-02-23 18:37","min":55.0,"mi":6.02,"hr":156},{"id":21968412955,"w":84,"k":"run","type":"treadmill running","name":"W08D3a-Recovery Run","d":"2026-02-24 06:25","min":30.1,"mi":2.22,"hr":112},{"id":21998087919,"w":84,"k":"run","type":"running","name":"Ottawa - W08D4b-Intervals","d":"2026-02-26 17:59","min":51.5,"mi":5.48,"hr":158},{"id":22030947542,"w":84,"k":"run","type":"running","name":"Ottawa - W08D7-Long Run","d":"2026-03-01 17:27","min":120.0,"mi":11.1,"hr":136},{"id":22041684273,"w":85,"k":"run","type":"treadmill running","name":"W09D2a-Recovery Run","d":"2026-03-02 18:55","min":30.0,"mi":2.75,"hr":145},{"id":22053574687,"w":85,"k":"run","type":"running","name":"Ottawa - W09D3-Intervals","d":"2026-03-03 18:48","min":59.9,"mi":6.84,"hr":169},{"id":22086329104,"w":85,"k":"run","type":"running","name":"Running","d":"2026-03-05 05:40","min":84.7,"mi":0.0,"hr":50},{"id":22109197700,"w":85,"k":"run","type":"running","name":"Ottawa - W09D7-Long Run","d":"2026-03-08 16:13","min":84.8,"mi":8.59,"hr":152},{"id":22120945204,"w":86,"k":"run","type":"running","name":"Ottawa - W10D2b-Intervals","d":"2026-03-09 19:51","min":26.2,"mi":3.3,"hr":175},{"id":22133394676,"w":86,"k":"run","type":"treadmill running","name":"W10D3a-Recovery Run","d":"2026-03-10 21:14","min":30.0,"mi":2.73,"hr":144},{"id":22144308684,"w":86,"k":"run","type":"treadmill running","name":"W10D4b-Threshold Run","d":"2026-03-11 19:53","min":30.0,"mi":3.01,"hr":157},{"id":22185839737,"w":86,"k":"run","type":"running","name":"Ottawa Running","d":"2026-03-15 14:27","min":47.4,"mi":5.19,"hr":154},{"id":22186584585,"w":86,"k":"run","type":"treadmill running","name":"Treadmill Running","d":"2026-03-15 16:18","min":68.7,"mi":7.92,"hr":162},{"id":22221399692,"w":87,"k":"run","type":"treadmill running","name":"W11D3-Intervals","d":"2026-03-18 20:31","min":31.4,"mi":3.73,"hr":164},{"id":22243095123,"w":87,"k":"run","type":"treadmill running","name":"W11D6-Recovery Run","d":"2026-03-20 19:22","min":40.0,"mi":3.79,"hr":150},{"id":22255464921,"w":87,"k":"run","type":"treadmill running","name":"W12D1a-Recovery Run","d":"2026-03-22 00:21","min":30.0,"mi":2.86,"hr":145},{"id":22265233243,"w":87,"k":"run","type":"running","name":"Ottawa - W11D7-Long Run","d":"2026-03-22 14:09","min":85.0,"mi":9.15,"hr":147},{"id":22277610167,"w":88,"k":"run","type":"running","name":"Ottawa - W12D2b-Threshold Run","d":"2026-03-23 19:13","min":30.0,"mi":3.28,"hr":145},{"id":22327656782,"w":88,"k":"run","type":"running","name":"Ottawa Running","d":"2026-03-28 09:47","min":45.4,"mi":5.03,"hr":160},{"id":22328518605,"w":88,"k":"run","type":"running","name":"Ottawa Running","d":"2026-03-28 11:33","min":8.8,"mi":0.92,"hr":157},{"id":22342944872,"w":88,"k":"run","type":"running","name":"Ottawa - W12D7-Long Run","d":"2026-03-29 14:42","min":88.8,"mi":8.94,"hr":139},{"id":22377667968,"w":89,"k":"run","type":"running","name":"Ottawa - W13D4-Threshold Run","d":"2026-04-01 19:16","min":70.0,"mi":7.27,"hr":157},{"id":22388149248,"w":89,"k":"run","type":"running","name":"Ottawa - W13D6-Easy Run","d":"2026-04-02 19:04","min":30.0,"mi":2.93,"hr":143},{"id":22398803907,"w":89,"k":"run","type":"running","name":"Ottawa - W13D7-Long Run","d":"2026-04-03 16:41","min":61.9,"mi":6.21,"hr":144},{"id":22446785128,"w":90,"k":"run","type":"running","name":"Ottawa - W14D3-Intervals","d":"2026-04-07 20:10","min":29.3,"mi":3.5,"hr":167},{"id":22471494951,"w":90,"k":"run","type":"running","name":"Ottawa - W14D6-Easy Run","d":"2026-04-09 18:17","min":40.0,"mi":4.06,"hr":154},{"id":22493700714,"w":90,"k":"other","type":"golf","name":"Ottawa Walking","d":"2026-04-11 17:12","min":105.9,"mi":5.17,"hr":89},{"id":22505479985,"w":90,"k":"run","type":"running","name":"Ottawa Running","d":"2026-04-12 18:11","min":8.6,"mi":0.95,"hr":149},{"id":22506120435,"w":90,"k":"run","type":"treadmill running","name":"W14D7-Long Run","d":"2026-04-12 18:34","min":120.0,"mi":12.08,"hr":146},{"id":22516306316,"w":91,"k":"run","type":"running","name":"Ottawa - W15D2-Intervals","d":"2026-04-13 17:20","min":37.8,"mi":4.76,"hr":158},{"id":22541537343,"w":91,"k":"run","type":"running","name":"Ottawa - W15D4-Threshold Run","d":"2026-04-15 18:49","min":68.8,"mi":8.08,"hr":170},{"id":22562796389,"w":91,"k":"run","type":"running","name":"Ottawa - W15D6-Easy Run","d":"2026-04-17 14:44","min":39.3,"mi":4.5,"hr":164},{"id":22588479504,"w":91,"k":"run","type":"running","name":"Ottawa - W15D7-Long Run","d":"2026-04-19 18:26","min":70.0,"mi":8.2,"hr":155},{"id":22617924721,"w":92,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-04-22 08:29","min":17.3,"mi":3.1,"hr":102},{"id":22648351479,"w":92,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-04-22 17:42","min":15.0,"mi":2.95,"hr":95},{"id":22648352130,"w":92,"k":"run","type":"running","name":"Ottawa - W16D4-Easy Run","d":"2026-04-22 19:49","min":23.4,"mi":2.49,"hr":148},{"id":22648352910,"w":92,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-04-23 08:33","min":14.6,"mi":2.73,"hr":116},{"id":22648355251,"w":92,"k":"other","type":"golf","name":"Gatineau Walking","d":"2026-04-23 17:14","min":126.0,"mi":3.11,"hr":97},{"id":22648355890,"w":92,"k":"run","type":"running","name":"Ottawa - W16D6-Easy Run","d":"2026-04-24 20:31","min":20.0,"mi":2.21,"hr":155},{"id":22655416291,"w":92,"k":"run","type":"running","name":"South Dundas Running","d":"2026-04-25 07:00","min":236.4,"mi":25.01,"hr":171},{"id":22676967240,"w":93,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-04-27 08:29","min":18.4,"mi":2.89,"hr":101},{"id":22683481904,"w":93,"k":"other","type":"golf","name":"Gatineau Walking","d":"2026-04-27 17:46","min":110.7,"mi":2.51,"hr":110},{"id":22772529272,"w":93,"k":"other","type":"golf","name":"Ottawa Walking","d":"2026-04-28 12:23","min":42.4,"mi":1.91,"hr":84},{"id":22792231216,"w":94,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-05-06 17:11","min":93.5,"mi":2.34,"hr":115},{"id":22826092115,"w":94,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-05-09 17:28","min":107.9,"mi":2.73,"hr":96},{"id":22835505331,"w":94,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-05-10 10:50","min":102.4,"mi":23.68,"hr":134},{"id":22848330735,"w":95,"k":"run","type":"running","name":"Ottawa Running","d":"2026-05-11 17:56","min":31.6,"mi":3.73,"hr":152},{"id":22854231248,"w":95,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-05-12 07:51","min":19.3,"mi":3.06,"hr":111},{"id":22860339758,"w":95,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-05-12 17:15","min":22.8,"mi":2.77,"hr":105},{"id":22884518860,"w":95,"k":"run","type":"treadmill running","name":"Treadmill Running","d":"2026-05-13 19:50","min":30.0,"mi":3.11,"hr":147},{"id":22884520185,"w":95,"k":"run","type":"running","name":"Chelsea Running","d":"2026-05-14 17:49","min":33.2,"mi":3.11,"hr":148},{"id":22895172357,"w":95,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-05-15 18:18","min":116.4,"mi":3.0,"hr":93},{"id":22918529735,"w":95,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-05-17 17:51","min":109.7,"mi":3.13,"hr":91},{"id":22965607463,"w":96,"k":"run","type":"running","name":"Chelsea Running","d":"2026-05-21 17:48","min":33.6,"mi":2.98,"hr":157},{"id":22970951958,"w":96,"k":"run","type":"running","name":"Ottawa Running","d":"2026-05-22 07:35","min":29.3,"mi":3.26,"hr":163},{"id":22977448525,"w":96,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-05-22 18:00","min":120.5,"mi":23.63,"hr":131},{"id":23013677959,"w":97,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-05-25 18:33","min":145.4,"mi":3.58,"hr":95},{"id":23018780077,"w":97,"k":"run","type":"running","name":"Ottawa Running","d":"2026-05-26 08:21","min":27.0,"mi":3.11,"hr":147},{"id":23025938558,"w":97,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-05-26 18:52","min":126.8,"mi":3.13,"hr":109},{"id":23073135449,"w":97,"k":"other","type":"golf","name":"Ottawa Walking","d":"2026-05-30 15:50","min":224.1,"mi":6.0,"hr":99},{"id":23085066245,"w":97,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-05-31 15:45","min":140.1,"mi":2.89,"hr":80},{"id":23098093324,"w":98,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-06-01 18:17","min":126.1,"mi":2.95,"hr":88},{"id":23133752103,"w":98,"k":"run","type":"running","name":"Chelsea Running","d":"2026-06-04 17:55","min":50.0,"mi":4.53,"hr":165},{"id":23154527034,"w":98,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-06-05 18:42","min":126.1,"mi":3.13,"hr":90},{"id":23319326382,"w":100,"k":"other","type":"golf","name":"St Catharines Walking","d":"2026-06-15 07:07","min":78.7,"mi":1.93,"hr":81},{"id":23319332620,"w":100,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-06-16 19:04","min":131.8,"mi":3.14,"hr":100},{"id":23322176159,"w":100,"k":"run","type":"running","name":"Ottawa - M \u00b7 Easy Z2 \u00b7 35min","d":"2026-06-20 17:50","min":35.0,"mi":3.73,"hr":149},{"id":23331582596,"w":100,"k":"run","type":"running","name":"Ottawa - M \u00b7 Recovery Z1 \u00b7 30min","d":"2026-06-21 12:38","min":31.2,"mi":3.51,"hr":135},{"id":23351289476,"w":100,"k":"other","type":"golf","name":"Ottawa Walking","d":"2026-06-21 14:56","min":170.2,"mi":3.52,"hr":92},{"id":23401224442,"w":101,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-06-27 16:21","min":141.6,"mi":3.01,"hr":111},{"id":23401693125,"w":101,"k":"run","type":"running","name":"Chelsea - M \u00b7 Long Easy Z2 \u00b7 60min","d":"2026-06-27 19:27","min":28.0,"mi":2.82,"hr":156},{"id":23424803655,"w":102,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-06-29 17:51","min":100.8,"mi":22.22,"hr":136},{"id":23429714546,"w":102,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-06-30 08:37","min":17.1,"mi":2.76,"hr":104},{"id":23457637939,"w":102,"k":"run","type":"running","name":"Ottawa - M \u00b7 Recovery Z1 \u00b7 30min","d":"2026-07-02 12:14","min":30.0,"mi":3.22,"hr":162},{"id":23459960697,"w":102,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-07-02 19:13","min":128.0,"mi":3.13,"hr":108},{"id":23470452209,"w":102,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-07-03 18:19","min":101.0,"mi":3.14,"hr":115},{"id":23480224116,"w":102,"k":"run","type":"running","name":"Ottawa - M \u00b7 LT Field Test \u00b7 30min TT","d":"2026-07-04 13:05","min":34.8,"mi":4.4,"hr":172},{"id":23481403020,"w":102,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-07-04 15:40","min":137.5,"mi":3.01,"hr":118},{"id":23588392344,"w":104,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-07-13 18:26","min":133.8,"mi":3.09,"hr":109},{"id":23593865445,"w":104,"k":"run","type":"running","name":"Ottawa - M \u00b7 Easy Z2 +Strides \u00b7 45min","d":"2026-07-14 07:37","min":32.3,"mi":3.25,"hr":146},{"id":23600632702,"w":104,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-07-14 18:40","min":22.5,"mi":4.29,"hr":122},{"id":23601017266,"w":104,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-07-14 19:48","min":18.3,"mi":3.86,"hr":144},{"id":23613374580,"w":104,"k":"run","type":"running","name":"Ottawa - M \u00b7 Easy Z2 \u00b7 40min","d":"2026-07-15 19:56","min":36.0,"mi":3.56,"hr":153},{"id":23636256001,"w":104,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-07-17 18:47","min":119.4,"mi":2.75,"hr":95},{"id":23670177725,"w":104,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-07-19 16:16","min":158.9,"mi":3.31,"hr":97},{"id":23670595066,"w":105,"k":"run","type":"running","name":"Ottawa - M \u00b7 Easy Z2 \u00b7 40min","d":"2026-07-20 17:36","min":36.9,"mi":3.73,"hr":145},{"id":23685435882,"w":105,"k":"run","type":"running","name":"Ottawa - M \u00b7 Easy Z2 +Strides \u00b7 50min","d":"2026-07-21 22:30","min":32.6,"mi":3.36,"hr":149},{"id":23692940644,"w":105,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-07-22 08:12","min":18.9,"mi":2.98,"hr":102},{"id":23696886303,"w":105,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-07-22 17:09","min":103.7,"mi":2.27,"hr":98},{"id":23714719689,"w":105,"k":"run","type":"running","name":"Ottawa - M \u00b7 Easy Z2 \u00b7 45min","d":"2026-07-24 07:53","min":44.5,"mi":4.47,"hr":143},{"id":23756843520,"w":106,"k":"run","type":"running","name":"Ottawa - M \u00b7 Long Z2 \u00b7 100min","d":"2026-07-27 18:50","min":40.9,"mi":4.01,"hr":153},{"id":23764923449,"w":106,"k":"run","type":"running","name":"Ottawa - M \u00b7 Easy Z2 \u00b7 45min","d":"2026-07-28 07:56","min":29.6,"mi":3.14,"hr":154},{"id":23769832271,"w":106,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-07-28 17:34","min":113.2,"mi":2.85,"hr":98},{"id":23812910292,"w":106,"k":"bike","type":"cycling","name":"Ottawa Cycling","d":"2026-07-30 17:41","min":73.7,"mi":15.95,"hr":133},{"id":23825321432,"w":106,"k":"run","type":"running","name":"Chelsea - M \u00b7 Recovery Z1 \u00b7 35min","d":"2026-08-01 19:57","min":16.9,"mi":1.61,"hr":145},{"id":23830093740,"w":106,"k":"run","type":"running","name":"Ottawa - M \u00b7 Long Z2 \u00b7 110min","d":"2026-08-02 17:07","min":90.3,"mi":8.9,"hr":150},{"id":23842475600,"w":107,"k":"run","type":"running","name":"Ottawa - M \u00b7 Easy Z2 \u00b7 40min","d":"2026-08-03 19:04","min":35.4,"mi":3.47,"hr":146},{"id":23855801658,"w":107,"k":"run","type":"running","name":"Ottawa - M \u00b7 Easy Z2 +Strides \u00b7 40min","d":"2026-08-04 19:11","min":28.7,"mi":3.11,"hr":142},{"id":23861570810,"w":107,"k":"run","type":"running","name":"Ottawa - M \u00b7 Easy Z2 \u00b7 40min","d":"2026-08-05 07:41","min":33.2,"mi":3.46,"hr":146},{"id":23956286752,"w":108,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-08-12 18:22","min":132.3,"mi":2.82,"hr":94},{"id":23967823096,"w":108,"k":"run","type":"running","name":"Gatineau Running","d":"2026-08-13 17:46","min":38.9,"mi":3.82,"hr":165},{"id":23992043705,"w":108,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-08-15 15:50","min":230.7,"mi":5.66,"hr":103},{"id":24003949393,"w":108,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-08-16 15:54","min":130.6,"mi":2.79,"hr":94},{"id":24029839336,"w":109,"k":"other","type":"golf","name":"Ottawa Walking","d":"2026-08-17 18:35","min":109.7,"mi":2.63,"hr":99},{"id":24029841682,"w":109,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-08-18 18:49","min":73.3,"mi":1.98,"hr":99},{"id":24240105632,"w":110,"k":"other","type":"golf","name":"Acatenango Walking","d":"2026-08-27 09:59","min":252.2,"mi":3.66,"hr":111},{"id":24535005252,"w":115,"k":"run","type":"running","name":"Ottawa Running","d":"2026-09-28 18:40","min":29.7,"mi":3.11,"hr":149},{"id":24560858842,"w":115,"k":"other","type":"golf","name":"Ottawa Walking","d":"2026-09-30 14:36","min":223.9,"mi":5.26,"hr":107},{"id":24594663436,"w":115,"k":"run","type":"running","name":"Ottawa Running","d":"2026-10-03 14:28","min":27.4,"mi":2.92,"hr":150},{"id":24607312787,"w":115,"k":"other","type":"golf","name":"Ottawa Walking","d":"2026-10-04 12:20","min":141.7,"mi":3.95,"hr":76},{"id":24647057098,"w":116,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-10-07 17:26","min":86.7,"mi":2.75,"hr":106},{"id":24772986641,"w":117,"k":"other","type":"golf","name":"Chelsea Walking","d":"2026-10-18 15:19","min":132.9,"mi":3.13,"hr":93},{"id":24796410248,"w":118,"k":"run","type":"running","name":"Ottawa Running","d":"2026-10-20 17:21","min":34.9,"mi":3.73,"hr":153},{"id":24819304550,"w":118,"k":"run","type":"running","name":"Ottawa Running","d":"2026-10-22 17:40","min":2.4,"mi":0.23,"hr":135},{"id":24874277741,"w":119,"k":"run","type":"running","name":"Chelsea Running","d":"2026-10-27 15:59","min":40.4,"mi":3.76,"hr":160}],"longest":22655416291,"counts":{"other":54,"bike":23,"run":103},"vitals":[{"k":"Body Battery","v":"41","u":"/100","s":"warn","note":"overnight charge"},{"k":"Sleep","v":"8h 12m","u":"","s":"good","note":"last night"},{"k":"Resting HR","v":"52","u":"bpm","s":"bad","note":"+6 vs 7-day avg"},{"k":"Training form","v":"-6","u":"","s":"good","note":"fitness 13 \u00b7 fatigue 19"},{"k":"Miles this week","v":"3.8","u":"mi","s":"good","note":"4-wk avg 2.5"}],"directives":["Keep today easy: resting HR is +6 bpm. Run 30\u201340 min in zone 2, or rest.","Slow down: only 32% of the last 4 weeks was easy. Run most miles in zone 2.","Rebuild the habit: 3 runs in 2 weeks. Aim for 3 runs this week."],"deck":{"recovery":"3 of 5 vitals in range. Body Battery 41 /100 \u00b7 Sleep 8h 12m \u00b7 Resting HR 52 bpm \u00b7 Training form -6. Verdict: go easy today.","plan":"1. Keep today easy: resting HR is +6 bpm. Run 30\u201340 min in zone 2, or rest. 2. Slow down: only 32% of the last 4 weeks was easy. Run most miles in zone 2. 3. Rebuild the habit: 3 runs in 2 weeks. Aim for 3 runs this week.","race":"Half Marathon on Feb 14: race week starts Feb 8. Longest run in the last 8 weeks: 3.8 mi of 13.1.","recap":"This week: 1 session, 3.8 run miles, 0h 40m of training (golf excluded). 4-week average is 2.5 mi."}};
+const $ = (s) => document.querySelector(s);
+const COLORS = { run: "#3dff9a", bike: "#4d8dff", lift: "#f5c451", swim: "#2fd9e8", other: "#8a8f98" };
+const NAMES = { run: "Run", bike: "Bike", lift: "Lift", swim: "Swim", other: "Other" };
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtD = (s) => { const d = new Date(s.slice(0, 10) + "T00:00:00"); return `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`; };
+const hm = (m) => `${Math.floor(m / 60)}h ${String(Math.round(m % 60)).padStart(2, "0")}m`;
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- static rails ---------- */
+$("#nnodes").textContent = D.nodes.length + D.weeks.length;
+const raceDay = D.race ? new Date(D.race.date + "T00:00:00") : null;
+function tick() {
+  const now = new Date();
+  $("#clock").textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  if (raceDay) {
+    let s = Math.max(0, Math.floor((raceDay - now) / 1000));
+    const d = Math.floor(s / 86400); s %= 86400;
+    const h = Math.floor(s / 3600); s %= 3600;
+    const m = Math.floor(s / 60); s %= 60;
+    const p = (x) => String(x).padStart(2, "0");
+    $("#count").innerHTML = `${d}<span>d</span>${p(h)}<span>h</span>${p(m)}<span>m</span>${p(s)}<span>s</span>`;
+    $("#ns-days").innerHTML = `${Math.round((raceDay - new Date(now.toDateString())) / 864e5)}<small>days</small>`;
+  }
+}
+tick(); setInterval(tick, 1000);
+$("#ns-sub").textContent = D.race ? `${D.race.name} · ${fmtD(D.race.date)}` : "Set a race in config.json";
+$("#vitals").innerHTML = D.vitals.map((v) => `<div class="vital"><i style="background:var(--${v.s === "good" ? "green" : v.s === "warn" ? "gold" : "red"})"></i><span class="k">${v.k}</span><span class="v ${v.s}">${v.v}<small>${v.u}</small></span><span class="n">${v.note} · ${v.s === "good" ? "good" : v.s === "warn" ? "watch" : "off"}</span></div>`).join("");
+$("#dirs").innerHTML = D.directives.map((d) => `<li><span>${d}</span></li>`).join("");
+$("#legend").innerHTML = Object.keys(COLORS).filter((k) => D.counts[k]).map((k) => `<div style="color:${COLORS[k]}"><i style="background:${COLORS[k]}"></i><span style="color:var(--text)">${NAMES[k]}${k === "other" ? " (golf, yoga…)" : ""}</span><b style="color:var(--text)">${D.counts[k]}</b></div>`).join("");
+
+/* command deck: computed answers; anything that would change data or send messages isn't connected */
+const DECK = {
+  recovery: D.deck.recovery, plan: D.deck.plan, race: D.deck.race, recap: D.deck.recap,
+  watch: "Not connected: this OS reads your Garmin data but can't change your watch.",
+  coach: "Opening your coach view (coach.html)…",
+};
+document.querySelectorAll(".deck button").forEach((b) => b.addEventListener("click", () => {
+  const c = b.dataset.c;
+  $("#out").innerHTML = `<b>${b.textContent.slice(1).trim()}</b> › ${DECK[c]}`;
+  if (c === "coach") window.open("coach.html", "_blank");
+}));
+$("#newchat").addEventListener("click", () => { $("#out").innerHTML = "<b>New OS chat</b> › Chat isn't available in this offline file. Ask Claude in the Claude app."; });
+
+/* ---------- star field ---------- */
+(function () {
+  const c = $("#stars"), x = c.getContext("2d"), dpr = devicePixelRatio || 1;
+  function draw() {
+    c.width = innerWidth * dpr; c.height = innerHeight * dpr; c.style.width = innerWidth + "px"; c.style.height = innerHeight + "px";
+    let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 260; i++) {
+      x.fillStyle = `rgba(230,220,255,${0.15 + rnd() * 0.5})`;
+      const r = rnd() < 0.08 ? 1.4 : 0.7;
+      x.beginPath(); x.arc(rnd() * c.width, rnd() * c.height * 0.75, r * dpr, 0, 6.29); x.fill();
+    }
+  }
+  draw(); addEventListener("resize", draw);
+})();
+
+/* ---------- 3D graph ---------- */
+const cv = $("#graph"), ctx = cv.getContext("2d");
+const NW = D.weeks.length, R = 1;
+function hash(n) { let h = Number(String(n).slice(-9)) || 1; return () => ((h = (h * 48271) % 2147483647) / 2147483647); }
+const weeks = D.weeks.map((w, i) => {
+  const t = NW > 1 ? i / (NW - 1) : 0.5;
+  const th = Math.acos(1 - 2 * (0.04 + t * 0.92)), ph = t * Math.PI * 2 * 7;
+  return { x: R * Math.sin(th) * Math.cos(ph), y: R * Math.cos(th), z: R * Math.sin(th) * Math.sin(ph), label: w, i };
+});
+const nodes = D.nodes.map((n) => {
+  const r = hash(n.id), w = weeks[n.w];
+  const out = 1.12 + r() * 0.16, jx = (r() - 0.5) * 0.16, jy = (r() - 0.5) * 0.16, jz = (r() - 0.5) * 0.16;
+  return { ...n, x: w.x * out + jx, y: w.y * out + jy, z: w.z * out + jz, size: 1.6 + Math.sqrt(Math.max(n.min, 1)) * 0.55, color: COLORS[n.k] };
+});
+const longest = nodes.find((n) => n.id === D.longest);
+
+// glow sprites per colour, drawn with additive blending
+const sprites = {};
+function sprite(color) {
+  if (sprites[color]) return sprites[color];
+  const s = document.createElement("canvas"); s.width = s.height = 64;
+  const g = s.getContext("2d"), grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grd.addColorStop(0, "rgba(255,255,255,1)"); grd.addColorStop(0.18, color); grd.addColorStop(0.45, color + "55"); grd.addColorStop(1, color + "00");
+  g.fillStyle = grd; g.fillRect(0, 0, 64, 64);
+  return (sprites[color] = s);
+}
+
+let W = 0, H = 0, dpr = 1, yaw = 0.6, pitch = 0.32, drag = null, hover = null, query = "";
+function resize() {
+  dpr = devicePixelRatio || 1; W = cv.clientWidth; H = cv.clientHeight;
+  cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function project(p) {
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const x1 = p.x * cy - p.z * sy, z1 = p.x * sy + p.z * cy;
+  const y2 = p.y * cp - z1 * sp, z2 = p.y * sp + z1 * cp;
+  const cam = 3.6, f = Math.min(W, H * 0.9) * 0.3 * cam, s = f / (cam - z2);
+  return { sx: W / 2 + x1 * s, sy: H * 0.46 - y2 * s, z: z2, s: (cam / (cam - z2)) * Math.min(W, H) / 760 };
+}
+const match = (n) => !query || `${n.type} ${n.name} ${fmtD(n.d)} ${NAMES[n.k]}`.toLowerCase().includes(query);
+
+function frame(t) {
+  if (!drag && !reduced) yaw += 0.0016;
+  ctx.clearRect(0, 0, W, H);
+  ctx.globalCompositeOperation = "lighter";
+
+  // core
+  const o = project({ x: 0, y: 0, z: 0 }), cr = Math.min(W, H) * 0.32;
+  let g = ctx.createRadialGradient(o.sx, o.sy, 0, o.sx, o.sy, cr);
+  g.addColorStop(0, "rgba(255,240,200,0.55)"); g.addColorStop(0.12, "rgba(245,196,81,0.28)"); g.addColorStop(0.4, "rgba(150,90,255,0.10)"); g.addColorStop(1, "rgba(150,90,255,0)");
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(o.sx, o.sy, cr, 0, 6.29); ctx.fill();
+
+  const pw = weeks.map(project);
+  nodes.forEach((n) => (n.p = project(n)));
+
+  // links: week → week spine, activity → week
+  ctx.lineWidth = 1;
+  for (let i = 1; i < pw.length; i++) {
+    const a = pw[i - 1], b = pw[i], depth = (a.z + b.z) / 2;
+    ctx.strokeStyle = `rgba(245,196,81,${0.12 + (depth + 1.3) * 0.12})`;
+    ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
+  }
+  nodes.forEach((n) => {
+    const w = pw[n.w], on = match(n);
+    ctx.strokeStyle = n.color + (on ? "38" : "0c");
+    ctx.beginPath(); ctx.moveTo(w.sx, w.sy); ctx.lineTo(n.p.sx, n.p.sy); ctx.stroke();
+  });
+  pw.forEach((w) => { ctx.fillStyle = `rgba(245,196,81,${0.25 + (w.z + 1.3) * 0.2})`; ctx.beginPath(); ctx.arc(w.sx, w.sy, 1.4, 0, 6.29); ctx.fill(); });
+
+  // nodes, far to near
+  [...nodes].sort((a, b) => a.p.z - b.p.z).forEach((n) => {
+    const on = match(n), r = n.size * n.p.s * (n === hover ? 1.6 : 1);
+    ctx.globalAlpha = on ? 0.55 + (n.p.z + 1.4) * 0.2 : 0.08;
+    const sz = r * 5.5;
+    ctx.drawImage(sprite(n.color), n.p.sx - sz / 2, n.p.sy - sz / 2, sz, sz);
+  });
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+
+  // longest run ring + callout
+  if (longest) {
+    const p = longest.p, pulse = reduced ? 0 : Math.sin(t / 400) * 2;
+    const rr = longest.size * p.s * 2.2 + 6 + pulse;
+    ctx.strokeStyle = "#f5c451"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(p.sx, p.sy, rr, 0, 6.29); ctx.stroke();
+    ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.arc(p.sx, p.sy, rr + 6, 0, 6.29); ctx.stroke(); ctx.setLineDash([]);
+    const card = $("#callout"), cw = card.offsetWidth, ch = card.offsetHeight;
+    let cx = p.sx + rr + 34, cyy = p.sy - ch - 20;
+    if (cx + cw > W - 8) cx = p.sx - rr - 34 - cw;
+    cyy = Math.max(30, Math.min(H - ch - 90, cyy));
+    card.style.left = cx + "px"; card.style.top = cyy + "px";
+    const ax = cx > p.sx ? cx : cx + cw, ay = cyy + ch / 2;
+    ctx.strokeStyle = "rgba(245,196,81,0.7)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(p.sx + (ax > p.sx ? rr : -rr) * 0.9, p.sy); ctx.lineTo(ax, ay); ctx.stroke();
+  }
+  // hover ring
+  if (hover) {
+    ctx.strokeStyle = hover.color; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(hover.p.sx, hover.p.sy, hover.size * hover.p.s * 2 + 6, 0, 6.29); ctx.stroke();
+  }
+  requestAnimationFrame(frame);
+}
+if (longest) {
+  $("#callout").innerHTML = `<div class="t">◆ LONGEST RUN</div><div class="nm">${longest.name}</div>
+    <div class="row"><span>Date</span><b>${fmtD(longest.d)}</b></div>
+    <div class="row"><span>Distance</span><b>${longest.mi.toFixed(1)} mi</b></div>
+    <div class="row"><span>Time</span><b>${(longest.min / 60).toFixed(2)} h</b></div>`;
+} else $("#callout").style.display = "none";
+
+/* interaction */
+const tip = $("#tip");
+function pick(e) {
+  const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  let best = null, bd = 1e9;
+  nodes.forEach((n) => {
+    if (!n.p || !match(n)) return;
+    const d = Math.hypot(n.p.sx - mx, n.p.sy - my), reach = Math.max(8, n.size * n.p.s * 2.2);
+    if (d < reach && (d < bd || (best && n.p.z > best.p.z && d < reach))) { best = n; bd = d; }
+  });
+  return best;
+}
+cv.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, yaw, pitch, moved: false }; cv.setPointerCapture(e.pointerId); cv.classList.add("drag"); });
+cv.addEventListener("pointermove", (e) => {
+  if (drag) {
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+    yaw = drag.yaw + dx * 0.006; pitch = Math.max(-1.2, Math.min(1.2, drag.pitch + dy * 0.006));
+    tip.style.opacity = 0; return;
+  }
+  hover = pick(e);
+  if (!hover) { tip.style.opacity = 0; return; }
+  const n = hover;
+  tip.innerHTML = `<div class="t">${fmtD(n.d)} · ${n.d.slice(11)}</div><div style="color:${n.color};font-weight:600;margin-bottom:3px">${n.type}</div>
+    <div class="r"><span>${n.name}</span></div>
+    ${n.mi ? `<div class="r"><span>Distance</span><b>${n.mi.toFixed(2)} mi</b></div>` : ""}
+    <div class="r"><span>Time</span><b>${hm(n.min)}</b></div>
+    ${n.hr ? `<div class="r"><span>Avg HR</span><b>${n.hr} bpm</b></div>` : ""}
+    <div class="r"><span>Week of</span><b>${fmtD(D.weeks[n.w]).replace(/, \d{4}$/, "")}</b></div>`;
+  tip.style.opacity = 1;
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  tip.style.left = Math.min(innerWidth - tw - 8, e.clientX + 14) + "px";
+  tip.style.top = Math.min(innerHeight - th - 8, e.clientY + 14) + "px";
+});
+const endDrag = (e) => {
+  if (drag && !drag.moved && e.pointerType !== "mouse") { hover = pick(e); }
+  drag = null; cv.classList.remove("drag");
+};
+cv.addEventListener("pointerup", endDrag);
+cv.addEventListener("pointercancel", endDrag);
+cv.addEventListener("pointerleave", () => { hover = null; tip.style.opacity = 0; });
+$("#search").addEventListener("input", (e) => {
+  query = e.target.value.trim().toLowerCase();
+  const n = nodes.filter(match).length;
+  $("#found").textContent = query ? `${n} of ${nodes.length} nodes match` : "";
+});
+
+resize(); addEventListener("resize", resize);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+.env.local
+data/
+tools/
+__pycache__/
+*.tmp
+.DS_Store

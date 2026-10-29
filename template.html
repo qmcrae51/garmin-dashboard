@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J.A.R.V.I.S. Training</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #050a10;
+  --surface: #0c1622;
+  --surface-2: #0f1d2c;
+  --hud: #5fe0ff;
+  --hud-dim: rgba(95, 224, 255, 0.16);
+  --text: #e6f6ff;
+  --text-2: #9fb6c6;
+  --muted: #6c8191;
+  --grid: #16283a;
+  --axis: #24405a;
+  --run: #1a9ccb;
+  --ride: #c97b20;
+  --other: #d6608f;
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --display: "Orbitron", system-ui, sans-serif;
+  --body: "Rajdhani", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(26, 156, 203, 0.18), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(95, 224, 255, 0.07), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.4;
+  min-height: 100vh;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background: repeating-linear-gradient(0deg, rgba(95,224,255,0.025) 0 1px, transparent 1px 3px);
+}
+.wrap { position: relative; z-index: 1; max-width: 1240px; margin: 0 auto; padding: 24px 24px 64px; }
+
+/* header */
+header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.reactor { width: 52px; height: 52px; flex: none; }
+.reactor circle { fill: none; stroke: var(--hud); }
+.reactor .spin { transform-origin: 26px 26px; animation: spin 14s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.brand { font-family: var(--display); font-weight: 700; letter-spacing: 0.32em; font-size: 22px; color: var(--hud); text-shadow: 0 0 18px rgba(95,224,255,0.55); }
+.sub { font-family: var(--display); font-size: 10px; letter-spacing: 0.3em; color: var(--muted); margin-top: 4px; }
+.sub .ok { color: var(--good); }
+.stamp { margin-left: auto; text-align: right; font-size: 13px; color: var(--muted); letter-spacing: 0.08em; }
+
+/* panels */
+.panel {
+  position: relative; background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--hud-dim); border-radius: 6px; padding: 18px 18px 16px;
+}
+.panel::before, .panel::after {
+  content: ""; position: absolute; width: 14px; height: 14px; border: 2px solid var(--hud); opacity: 0.7; pointer-events: none;
+}
+.panel::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; border-top-left-radius: 6px; }
+.panel::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; border-bottom-right-radius: 6px; }
+h2 {
+  font-family: var(--display); font-weight: 500; font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--hud); margin: 0 0 4px;
+}
+.q { color: var(--text-2); font-size: 15px; margin: 0 0 12px; }
+.section-title { display: flex; align-items: center; gap: 12px; margin: 36px 0 14px; }
+.section-title h3 { font-family: var(--display); font-weight: 700; font-size: 14px; letter-spacing: 0.3em; margin: 0; color: var(--text); white-space: nowrap; }
+.section-title .rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--hud-dim), transparent); }
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+.g3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.tiles { grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); }
+
+/* briefing */
+.briefing { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; }
+.hello { font-family: var(--display); font-size: 20px; letter-spacing: 0.06em; margin: 2px 0 10px; }
+.lines { margin: 0; padding: 0; list-style: none; }
+.lines li { padding: 3px 0 3px 18px; position: relative; color: var(--text); font-size: 17px; opacity: 0; animation: in 0.5s ease forwards; }
+.lines li::before { content: "›"; position: absolute; left: 2px; color: var(--hud); }
+@keyframes in { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+
+/* mission rings */
+.mission { display: flex; align-items: center; gap: 16px; }
+.ring { width: 128px; height: 128px; flex: none; }
+.ring .track { fill: none; stroke: var(--grid); stroke-width: 8; }
+.ring .tick { stroke: var(--axis); stroke-width: 1; }
+.ring .arc { fill: none; stroke: var(--hud); stroke-width: 8; stroke-linecap: round; filter: drop-shadow(0 0 6px rgba(95,224,255,0.6)); transition: stroke-dashoffset 1.2s ease; }
+.ring .big { font-family: var(--display); font-weight: 700; font-size: 28px; fill: var(--text); }
+.ring .small { font-size: 11px; letter-spacing: 0.18em; fill: var(--muted); font-family: var(--display); }
+.mission .label { font-family: var(--display); font-size: 12px; letter-spacing: 0.2em; color: var(--hud); text-transform: uppercase; }
+.mission .title { font-size: 22px; font-weight: 700; margin: 2px 0; }
+.mission .meta { color: var(--text-2); font-size: 15px; }
+.chip { display: inline-block; margin-top: 8px; padding: 2px 10px; border: 1px solid var(--hud-dim); border-radius: 20px; font-size: 13px; color: var(--hud); letter-spacing: 0.06em; }
+
+/* tiles */
+.tile .k { font-family: var(--display); font-size: 10px; letter-spacing: 0.22em; color: var(--muted); text-transform: uppercase; }
+.tile .v { font-size: 38px; font-weight: 700; line-height: 1.1; margin-top: 6px; }
+.tile .v small { font-size: 16px; color: var(--text-2); font-weight: 500; margin-left: 4px; }
+.tile .d { font-size: 14px; color: var(--text-2); margin-top: 2px; min-height: 20px; }
+.tile .spark { display: block; width: 100%; height: 34px; margin-top: 8px; }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; }
+.status i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+/* charts */
+.chart { display: block; touch-action: pan-y; overflow: visible; }
+.chart .grid-line { stroke: var(--grid); stroke-width: 1; }
+.chart .base { stroke: var(--axis); stroke-width: 1; }
+.chart .tick { fill: var(--muted); font-size: 12px; font-family: var(--body); font-variant-numeric: tabular-nums; }
+.chart .cross { stroke: var(--hud); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart .band { fill: rgba(12, 163, 12, 0.10); }
+.chart .band-label { fill: var(--good); font-size: 12px; font-weight: 600; }
+.chart .glow { filter: drop-shadow(0 0 4px rgba(95, 224, 255, 0.55)); }
+.chart .now-label { fill: var(--hud); font-size: 11px; font-family: var(--display); letter-spacing: 0.12em; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; color: var(--text-2); margin: -4px 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex: none; }
+.sw.line { height: 3px; border-radius: 2px; width: 14px; }
+.empty { color: var(--muted); font-size: 15px; padding: 24px 0; text-align: center; }
+
+/* range filter */
+.range { display: inline-flex; border: 1px solid var(--hud-dim); border-radius: 4px; overflow: hidden; }
+.range button {
+  background: transparent; color: var(--text-2); border: 0; padding: 6px 14px; cursor: pointer;
+  font-family: var(--display); font-size: 11px; letter-spacing: 0.16em;
+}
+.range button.on { background: rgba(95,224,255,0.14); color: var(--hud); }
+
+/* tables */
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { font-family: var(--display); font-weight: 500; font-size: 10px; letter-spacing: 0.18em; color: var(--muted); text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--axis); text-transform: uppercase; }
+th:first-child, td:first-child { text-align: left; }
+td { padding: 9px 8px; text-align: right; border-bottom: 1px solid var(--grid); font-size: 16px; }
+td .vs { display: block; font-size: 13px; color: var(--muted); }
+.up { color: var(--good); } .down { color: var(--serious); }
+
+/* records */
+.rec .label { font-family: var(--display); font-size: 10px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
+.rec .value { font-size: 30px; font-weight: 700; margin: 4px 0 0; color: var(--text); }
+.rec .when { font-size: 14px; color: var(--text-2); }
+.records { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+
+/* zone mix */
+.zbar { display: flex; height: 22px; gap: 2px; margin: 6px 0 12px; }
+.zbar div { height: 100%; }
+.zbar div:first-child { border-radius: 4px 0 0 4px; } .zbar div:last-child { border-radius: 0 4px 4px 0; }
+.zlegend { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; font-size: 13px; color: var(--text-2); }
+.zlegend b { display: block; color: var(--text); font-size: 16px; }
+
+#tip {
+  position: fixed; pointer-events: none; z-index: 10; opacity: 0; transition: opacity 0.12s;
+  background: rgba(8, 16, 26, 0.96); border: 1px solid var(--hud); border-radius: 4px; padding: 8px 10px;
+  font-size: 14px; min-width: 140px; box-shadow: 0 0 18px rgba(95,224,255,0.25);
+}
+#tip .t { font-family: var(--display); font-size: 10px; letter-spacing: 0.16em; color: var(--hud); margin-bottom: 4px; text-transform: uppercase; }
+#tip .r { display: flex; align-items: center; gap: 6px; justify-content: space-between; }
+#tip .r span { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); }
+#tip .r b { color: var(--text); font-variant-numeric: tabular-nums; }
+#tip .n { color: var(--muted); font-size: 13px; margin-top: 2px; }
+footer { margin-top: 40px; color: var(--muted); font-size: 13px; text-align: center; letter-spacing: 0.06em; }
+
+@media (max-width: 640px) {
+  .wrap { padding: 16px 16px 48px; }
+  .brand { font-size: 17px; letter-spacing: 0.24em; }
+  .stamp { display: none; }
+  .briefing { grid-template-columns: 1fr; }
+  .g2, .g3 { grid-template-columns: 1fr; }
+  .tiles { grid-template-columns: 1fr 1fr; }
+  .tile .v { font-size: 30px; }
+  .ring { width: 104px; height: 104px; }
+  .section-title { flex-wrap: wrap; }
+  td, th { padding-left: 4px; padding-right: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reactor .spin { animation: none; }
+  .lines li { animation: none; opacity: 1; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg class="reactor" viewBox="0 0 52 52" aria-hidden="true">
+      <circle cx="26" cy="26" r="24" stroke-width="1" opacity="0.35"/>
+      <g class="spin"><circle cx="26" cy="26" r="19" stroke-width="3" stroke-dasharray="10 5" opacity="0.8"/></g>
+      <circle cx="26" cy="26" r="11" stroke-width="2"/>
+      <circle cx="26" cy="26" r="5" style="fill: var(--hud); filter: drop-shadow(0 0 6px var(--hud));"/>
+    </svg>
+    <div>
+      <div class="brand">J.A.R.V.I.S.</div>
+      <div class="sub">TRAINING SYSTEMS · <span class="ok">ONLINE</span></div>
+    </div>
+    <div class="stamp" id="stamp"></div>
+  </header>
+
+  <div class="panel briefing">
+    <div>
+      <h2>Daily briefing</h2>
+      <div class="hello" id="hello"></div>
+      <ul class="lines" id="lines"></ul>
+    </div>
+  </div>
+
+  <div class="section-title"><h3>MISSION</h3><div class="rule"></div></div>
+  <div class="grid g3" id="missions"></div>
+
+  <div class="section-title"><h3>VITALS</h3><div class="rule"></div></div>
+  <div class="grid tiles" id="tiles"></div>
+
+  <div class="section-title"><h3>THIS WEEK</h3><div class="rule"></div></div>
+  <div class="grid g2">
+    <div class="panel">
+      <h2>Weekly running distance</h2>
+      <p class="q">Am I building volume week over week?</p>
+      <div class="legend"><span><i class="sw" style="background:var(--run)"></i>Running km</span><span><i class="sw line" style="background:var(--hud);opacity:.7"></i>4-week average</span></div>
+      <div id="c-weekkm"></div>
+    </div>
+    <div class="panel">
+      <h2>This week vs last 4 weeks</h2>
+      <p class="q">Am I on pace with my recent routine?</p>
+      <div id="compare"></div>
+    </div>
+  </div>
+  <div class="grid" style="margin-top:16px">
+    <div class="panel">
+      <h2>Weekly training time by sport</h2>
+      <p class="q">How is my time split between running and everything else?</p>
+      <div class="legend" id="lg-hours"></div>
+      <div id="c-hours"></div>
+    </div>
+  </div>
+
+  <div class="section-title"><h3>TRENDS</h3><div class="rule"></div>
+    <div class="range" id="range">
+      <button data-d="90">3M</button><button data-d="182" class="on">6M</button><button data-d="366">1Y</button>
+    </div>
+  </div>
+  <div class="grid g2">
+    <div class="panel">
+      <h2>Training load</h2>
+      <p class="q">Am I ramping up safely? Keep the 7-day line close to the 28-day line.</p>
+      <div class="legend">
+        <span><i class="sw line" style="background:var(--run)"></i>7-day (fatigue)</span>
+        <span><i class="sw line" style="background:var(--ride)"></i>28-day (fitness)</span>
+        <span><i class="sw" style="background:var(--run);opacity:.35"></i>Daily load</span>
+      </div>
+      <div id="c-load"></div>
+    </div>
+    <div class="panel">
+      <h2>Running pace</h2>
+      <p class="q">Am I getting faster? Higher is quicker.</p>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--run);border-radius:50%"></i>Each run</span>
+        <span><i class="sw line" style="background:var(--hud)"></i>6-run average</span>
+      </div>
+      <div id="c-pace"></div>
+    </div>
+    <div class="panel">
+      <h2>Resting heart rate</h2>
+      <p class="q">Is my heart getting fitter? Lower over time is better.</p>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--run);border-radius:50%;opacity:.5"></i>Daily</span>
+        <span><i class="sw line" style="background:var(--hud)"></i>7-day average</span>
+      </div>
+      <div id="c-rhr"></div>
+    </div>
+    <div class="panel">
+      <h2>Sleep</h2>
+      <p class="q">Am I recovering enough? Aim for 7 hours or more.</p>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--run);opacity:.45"></i>Nightly</span>
+        <span><i class="sw line" style="background:var(--hud)"></i>7-night average</span>
+      </div>
+      <div id="c-sleep"></div>
+    </div>
+    <div class="panel">
+      <h2>Weight</h2>
+      <p class="q">Am I heading toward 200–215 lb?</p>
+      <div id="c-weight"></div>
+    </div>
+    <div class="panel">
+      <h2>Intensity mix · last 4 weeks</h2>
+      <p class="q">Am I doing enough easy running? Most minutes should sit in zones 1–2.</p>
+      <div id="zones"></div>
+      <div id="hrv-note" class="q" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <div class="section-title"><h3>RECORDS</h3><div class="rule"></div></div>
+  <div class="grid records" id="records"></div>
+  <div class="panel" style="margin-top:16px">
+    <h2>Longest runs</h2>
+    <p class="q">My biggest days on my feet.</p>
+    <div id="toprun"></div>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+<div id="tip" role="status"></div>
+
+<script>
+const D = __DATA__;
+const NS = "http://www.w3.org/2000/svg";
+const COL = { Run: "var(--run)", Ride: "var(--ride)", Other: "var(--other)" };
+const $ = (s) => document.querySelector(s);
+const tip = $("#tip");
+
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function txt(parent, x, y, s, cls, anchor) {
+  const t = el("text", { x, y, class: cls || "tick", "text-anchor": anchor || "start" }, parent);
+  t.textContent = s;
+  return t;
+}
+const toDate = (iso) => new Date(iso + "T00:00:00");
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtDay = (iso) => { const d = toDate(iso); return `${MON[d.getMonth()]} ${d.getDate()}`; };
+const fmtDayY = (iso) => { const d = toDate(iso); return `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`; };
+const fmtPace = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+const fmtHM = (h) => `${Math.floor(h)}h ${String(Math.round((h % 1) * 60)).padStart(2, "0")}m`;
+const daysUntil = (iso) => Math.round((toDate(iso) - toDate(D.today)) / 864e5);
+
+function showTip(html, e) {
+  tip.innerHTML = html;
+  tip.style.opacity = 1;
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 14;
+  tip.style.left = Math.max(8, x) + "px";
+  tip.style.top = Math.max(8, y) + "px";
+}
+const hideTip = () => (tip.style.opacity = 0);
+const row = (color, name, val, line) =>
+  `<div class="r"><span><i class="sw${line ? " line" : ""}" style="background:${color}"></i>${name}</span><b>${val}</b></div>`;
+
+function niceTicks(lo, hi, n) {
+  const span = hi - lo || 1;
+  const raw = span / n;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+  const out = [];
+  for (let v = Math.floor(lo / step) * step; v <= Math.ceil(hi / step) * step + 1e-9; v += step) out.push(+v.toFixed(6));
+  return out;
+}
+function monthTicks(t0, t1, maxN) {
+  const out = [];
+  const d = new Date(t0); d.setDate(1); d.setMonth(d.getMonth() + 1);
+  while (+d <= t1) { out.push(+d); d.setMonth(d.getMonth() + 1); }
+  const every = Math.ceil(out.length / maxN);
+  return out.filter((_, i) => i % every === 0);
+}
+
+/* ---------- time-series chart: lines, dots and thin bars, with a crosshair ---------- */
+function timeChart(host, o) {
+  host.innerHTML = "";
+  const W = host.clientWidth || 600, H = o.height || 210;
+  const m = { l: 40, r: 12, t: 12, b: 24 };
+  const xs = o.dates.map((d) => +toDate(d));
+  const vals = [];
+  o.series.forEach((s) => s.values.forEach((v) => v != null && vals.push(v)));
+  if (o.band) vals.push(o.band.lo, o.band.hi);
+  if (!vals.length) { host.innerHTML = `<div class="empty">${o.emptyText || "No data in this range yet."}</div>`; return; }
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (o.zero) lo = 0;
+  const pad = (hi - lo) * 0.08 || 1;
+  if (o.yCap) hi = Math.min(hi, o.yCap);
+  const ticks = o.step
+    ? (() => { const a = []; for (let v = Math.floor((lo - pad) / o.step) * o.step; v <= Math.ceil((hi + pad) / o.step) * o.step; v += o.step) a.push(v); return a; })()
+    : niceTicks(o.zero ? 0 : lo - pad, hi + pad, 4);
+  lo = ticks[0]; hi = ticks[ticks.length - 1];
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const X = (t) => m.l + (x1 === x0 ? 0.5 : (t - x0) / (x1 - x0)) * (W - m.l - m.r);
+  const span = H - m.t - m.b;
+  const Y = (v) => (o.invert ? m.t + ((v - lo) / (hi - lo)) * span : H - m.b - ((v - lo) / (hi - lo)) * span);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, class: "chart" }, host);
+
+  ticks.forEach((t) => {
+    el("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), class: "grid-line" }, svg);
+    txt(svg, m.l - 6, Y(t) + 4, o.fmtTick ? o.fmtTick(t) : t, "tick", "end");
+  });
+  el("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: "base" }, svg);
+  monthTicks(x0, x1, W < 420 ? 3 : 6).forEach((t) => {
+    const d = new Date(t);
+    txt(svg, X(t), H - 6, d.getMonth() === 0 ? `${MON[0]} ’${String(d.getFullYear()).slice(2)}` : MON[d.getMonth()], "tick", "middle");
+  });
+  if (o.band) {
+    const y1 = Y(o.band.hi), y2 = Y(o.band.lo);
+    el("rect", { x: m.l, width: W - m.l - m.r, y: Math.min(y1, y2), height: Math.abs(y2 - y1), class: "band" }, svg);
+    txt(svg, W - m.r - 4, Math.min(y1, y2) + 14, o.band.label, "band-label", "end");
+  }
+  const bw = Math.max(1.5, ((W - m.l - m.r) / Math.max(1, (x1 - x0) / 864e5)) * 0.7);
+  o.series.forEach((s) => {
+    if (s.kind === "bars") {
+      s.values.forEach((v, i) => {
+        if (!v) return;
+        const vv = Math.min(v, hi);
+        el("rect", { x: X(xs[i]) - bw / 2, y: Y(vv), width: bw, height: Math.max(0, Y(lo) - Y(vv)), fill: s.color, opacity: s.opacity ?? 0.35 }, svg);
+      });
+    } else if (s.kind === "dots") {
+      s.values.forEach((v, i) => {
+        if (v == null) return;
+        if (v > hi || v < lo) return;
+        el("circle", { cx: X(xs[i]), cy: Y(v), r: s.r || 3, fill: s.color, opacity: s.opacity ?? 0.9, stroke: "var(--surface)", "stroke-width": 1 }, svg);
+      });
+    } else {
+      let d = "", pen = false;
+      s.values.forEach((v, i) => {
+        if (v == null) { pen = false; return; }
+        d += (pen ? "L" : "M") + X(xs[i]).toFixed(1) + "," + Y(v).toFixed(1);
+        pen = true;
+      });
+      el("path", { d, fill: "none", stroke: s.color, "stroke-width": s.width || 2, "stroke-linejoin": "round", "stroke-linecap": "round", class: s.glow ? "glow" : "" }, svg);
+    }
+  });
+
+  // hover layer
+  const cross = el("line", { y1: m.t, y2: H - m.b, class: "cross", opacity: 0 }, svg);
+  const tipSeries = o.series.filter((s) => s.tip !== false);
+  const marks = tipSeries.map((s) => el("circle", { r: 4.5, fill: s.color, stroke: "var(--surface)", "stroke-width": 2, opacity: 0 }, svg));
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: span, fill: "transparent" }, svg);
+  const hasValue = (i) => tipSeries.some((s) => s.values[i] != null && s.values[i] !== 0);
+  const move = (e) => {
+    const r = svg.getBoundingClientRect();
+    const px = (e.clientX - r.left) * (W / r.width);
+    const t = x0 + ((px - m.l) / (W - m.l - m.r)) * (x1 - x0);
+    let best = -1, bestD = Infinity;
+    xs.forEach((x, i) => { const dd = Math.abs(x - t); if (dd < bestD && hasValue(i)) { bestD = dd; best = i; } });
+    if (best < 0) return;
+    const cx = X(xs[best]);
+    cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.setAttribute("opacity", 1);
+    let rows = "";
+    tipSeries.forEach((s, k) => {
+      const v = s.values[best];
+      if (v == null) { marks[k].setAttribute("opacity", 0); return; }
+      marks[k].setAttribute("cx", cx); marks[k].setAttribute("cy", Y(Math.min(v, hi))); marks[k].setAttribute("opacity", 1);
+      rows += row(s.color, s.name, (s.fmt || o.fmt)(v), s.kind !== "dots" && s.kind !== "bars");
+    });
+    const extra = o.tipExtra ? o.tipExtra(best) : "";
+    showTip(`<div class="t">${fmtDayY(o.dates[best])}</div>${rows}${extra}`, e);
+  };
+  hit.addEventListener("pointermove", move);
+  hit.addEventListener("pointerdown", move);
+  hit.addEventListener("pointerleave", () => { hideTip(); cross.setAttribute("opacity", 0); marks.forEach((mk) => mk.setAttribute("opacity", 0)); });
+}
+
+/* ---------- stacked weekly bars ---------- */
+function roundTop(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h);
+  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+}
+function barChart(host, o) {
+  host.innerHTML = "";
+  const W = host.clientWidth || 600, H = o.height || 220;
+  const m = { l: 40, r: 8, t: 18, b: 24 };
+  const n = o.labels.length;
+  const totals = o.labels.map((_, i) => o.stacks.reduce((a, s) => a + (s.values[i] || 0), 0));
+  const ticks = niceTicks(0, Math.max(1, ...totals) * 1.05, 4);
+  const hi = ticks[ticks.length - 1];
+  const span = H - m.t - m.b;
+  const Y = (v) => H - m.b - (v / hi) * span;
+  const band = (W - m.l - m.r) / n, bw = Math.max(3, band - 3);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, class: "chart" }, host);
+  ticks.forEach((t) => {
+    el("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), class: "grid-line" }, svg);
+    txt(svg, m.l - 6, Y(t) + 4, o.fmtTick ? o.fmtTick(t) : t, "tick", "end");
+  });
+  const every = Math.ceil(n / (W < 420 ? 4 : 7));
+  o.labels.forEach((lab, i) => {
+    const x = m.l + i * band + (band - bw) / 2;
+    let y0 = Y(0), drawn = 0;
+    const segs = o.stacks.map((s) => s.values[i] || 0);
+    const topK = segs.map((v, k) => (v > 0 ? k : -1)).reduce((a, b) => Math.max(a, b), -1);
+    o.stacks.forEach((s, k) => {
+      const v = segs[k];
+      if (!v) return;
+      const h = Y(0) - Y(v);
+      const gap = drawn ? 2 : 0;
+      const segH = Math.max(0.5, h - gap);
+      const y = y0 - h;
+      const attrs = { fill: s.color, opacity: i === n - 1 || !o.highlightLast ? 1 : 0.78 };
+      if (k === topK) el("path", { d: roundTop(x, y, bw, segH, 4), ...attrs }, svg);
+      else el("rect", { x, y, width: bw, height: segH, ...attrs }, svg);
+      y0 -= h; drawn++;
+    });
+    if (i % every === (n - 1) % every) txt(svg, x + bw / 2, H - 6, fmtDay(lab), "tick", "middle");
+    const hit = el("rect", { x: m.l + i * band, y: m.t, width: band, height: span, fill: "transparent" }, svg);
+    const show = (e) => {
+      let rows = "";
+      o.stacks.forEach((s, k) => { if (segs[k] || o.stacks.length === 1) rows += row(s.color, s.name, o.fmt(segs[k])); });
+      if (o.stacks.length > 1) rows += `<div class="n">Total ${o.fmt(totals[i])}</div>`;
+      showTip(`<div class="t">${i === n - 1 ? "This week" : "Week of " + fmtDay(lab)}</div>${rows}`, e);
+      hit.setAttribute("fill", "rgba(95,224,255,0.06)");
+    };
+    hit.addEventListener("pointermove", show);
+    hit.addEventListener("pointerdown", show);
+    hit.addEventListener("pointerleave", () => { hideTip(); hit.setAttribute("fill", "transparent"); });
+  });
+  el("line", { x1: m.l, x2: W - m.r, y1: Y(0), y2: Y(0), class: "base" }, svg);
+  if (o.highlightLast) {
+    const x = m.l + (n - 1) * band + band / 2;
+    txt(svg, x, Math.max(10, Y(totals[n - 1]) - 6), "NOW", "now-label", "middle");
+  }
+  if (o.avgLine) {
+    el("line", { x1: m.l, x2: W - m.r, y1: Y(o.avgLine.v), y2: Y(o.avgLine.v), stroke: "var(--hud)", "stroke-dasharray": "4 4", "stroke-width": 1, opacity: 0.7 }, svg);
+  }
+}
+
+/* ---------- sparkline (no axes) ---------- */
+function spark(values, color) {
+  const v = values.map((x, i) => [i, x]).filter((p) => p[1] != null);
+  if (v.length < 2) return "";
+  const xs = values.length - 1, lo = Math.min(...v.map((p) => p[1])), hi = Math.max(...v.map((p) => p[1]));
+  const d = v.map((p, k) => `${k ? "L" : "M"}${(p[0] / xs) * 200},${30 - ((p[1] - lo) / (hi - lo || 1)) * 26}`).join("");
+  return `<svg class="spark" viewBox="0 0 200 34" preserveAspectRatio="none"><path d="${d}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
+}
+
+/* ---------- static sections ---------- */
+function header() {
+  $("#stamp").innerHTML = `Data synced<br>${D.generated}`;
+  $("#hello").textContent = `${D.greeting}, Sir.`;
+  $("#lines").innerHTML = D.briefing.map((l, i) => `<li style="animation-delay:${0.15 + i * 0.25}s">${l}</li>`).join("");
+  $("#foot").textContent = `Built from your Garmin data · ${D.generated} · Run refresh.sh to update`;
+}
+
+function ring(frac, big, small) {
+  const r = 52, c = 2 * Math.PI * r, f = Math.max(0, Math.min(1, frac));
+  let ticks = "";
+  for (let i = 0; i < 60; i++) {
+    const a = (i / 60) * 2 * Math.PI, r1 = 62, r2 = i % 5 ? 64 : 67;
+    ticks += `<line class="tick" x1="${70 + r1 * Math.sin(a)}" y1="${70 - r1 * Math.cos(a)}" x2="${70 + r2 * Math.sin(a)}" y2="${70 - r2 * Math.cos(a)}"/>`;
+  }
+  return `<svg class="ring" viewBox="0 0 140 140">${ticks}
+    <circle class="track" cx="70" cy="70" r="${r}"/>
+    <circle class="arc" cx="70" cy="70" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - f)}" transform="rotate(-90 70 70)"/>
+    <text class="big" x="70" y="76" text-anchor="middle">${big}</text>
+    <text class="small" x="70" y="96" text-anchor="middle">${small}</text></svg>`;
+}
+function phase(days, distKm) {
+  const weeks = days / 7, block = distKm > 30 ? 18 : 12;
+  if (days < 0) return "Complete";
+  if (weeks <= 2) return "Taper";
+  if (weeks <= block) return "Race-specific build";
+  return `Base building · plan starts in ${Math.ceil(weeks - block)} wk`;
+}
+function missions() {
+  let html = "";
+  D.races.forEach((r) => {
+    const days = daysUntil(r.date), block = (r.distance_km > 30 ? 18 : 12) * 7;
+    const alts = (r.alt_dates || []).map(fmtDay).join(" or ");
+    html += `<div class="panel mission">${ring(1 - Math.min(days, 365) / 365, days, "DAYS")}
+      <div><div class="label">Target</div><div class="title">${r.name}</div>
+      <div class="meta">${fmtDayY(r.date)}${alts ? `<br>or ${alts}` : ""}</div>
+      <span class="chip">${phase(days, r.distance_km)}</span></div></div>`;
+  });
+  const g = D.weightGoal, w = D.tiles.weight;
+  if (w) {
+    const lost = g.start - w.lb, need = g.start - g.high;
+    html += `<div class="panel mission">${ring(lost / need, Math.round(w.lb), "LB")}
+      <div><div class="label">Body</div><div class="title">${g.low}–${g.high} lb</div>
+      <div class="meta">${Math.max(0, w.lb - g.high).toFixed(0)} lb to the top of your range<br>Last logged ${fmtDay(w.d)}</div>
+      <span class="chip">${lost > 0 ? `${lost.toFixed(1)} lb down` : "Starting point"}</span></div></div>`;
+  }
+  $("#missions").innerHTML = html;
+}
+
+function statusOf(acwr) {
+  if (acwr == null) return ["var(--muted)", "Not enough data"];
+  if (acwr > 1.5) return ["var(--critical)", "Spiking: ease off"];
+  if (acwr > 1.3) return ["var(--warning)", "Ramping fast"];
+  if (acwr >= 0.8) return ["var(--good)", "Productive"];
+  return ["var(--serious)", "Detraining"];
+}
+function tiles() {
+  const t = D.tiles, dd = D.daily, wk = D.weeks;
+  const pct = t.avg4Km ? Math.round((t.weekKm / t.avg4Km) * 100) : null;
+  const rhrDiff = t.rhr7 && t.rhrPrev ? t.rhr7 - t.rhrPrev : null;
+  const [sc, sl] = statusOf(t.acwr);
+  const lastRunDays = t.lastRun ? daysUntil(t.lastRun) * -1 : null;
+  const cards = [
+    ["Weekly distance", `${t.weekKm.toFixed(1)}<small>km</small>`,
+      pct == null ? "" : `${pct}% of 4-wk avg (${t.avg4Km} km)`, spark(wk.run_km.slice(-12), "var(--run)")],
+    ["Resting HR", t.rhr7 ? `${t.rhr7}<small>bpm</small>` : "–",
+      rhrDiff == null ? "7-day average" : `<span class="${rhrDiff <= 0 ? "up" : "down"}">${rhrDiff <= 0 ? "▼" : "▲"} ${Math.abs(rhrDiff)}</span> vs a month ago`,
+      spark(dd.rhr7.slice(-60), "var(--run)")],
+    ["Sleep", t.sleep7 ? `${Math.floor(t.sleep7)}<small>h</small> ${String(Math.round((t.sleep7 % 1) * 60)).padStart(2, "0")}<small>m</small>` : "–",
+      "7-night average", spark(dd.sleep7.slice(-60), "var(--run)")],
+    ["Training load", t.acwr != null ? `${t.acwr.toFixed(2)}<small>ratio</small>` : "–",
+      `<span class="status"><i style="background:${sc}"></i>${sl}</span>`, spark(dd.acute.slice(-60), "var(--run)")],
+    ["Consistency", `${t.runs28}<small>runs / 4 wk</small>`,
+      lastRunDays != null ? `Last run ${lastRunDays === 0 ? "today" : lastRunDays === 1 ? "yesterday" : lastRunDays + " days ago"}` : "", ""],
+    ["Fitness age", t.fitnessAge ? `${t.fitnessAge}<small>yrs</small>` : "–",
+      t.achievableAge ? `Actual ${t.age} · achievable ${t.achievableAge}` : "", ""],
+  ];
+  $("#tiles").innerHTML = cards.map(([k, v, d, s]) =>
+    `<div class="panel tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div>${s}</div>`).join("");
+}
+
+function compareTable() {
+  const fmtMin = (m) => (m >= 60 ? `${Math.floor(m / 60)}h ${String(Math.round(m % 60)).padStart(2, "0")}m` : `${Math.round(m)}m`);
+  const arrow = (a, b) => (b === 0 && a === 0 ? "" : a >= b ? ' <span class="up">▲</span>' : ' <span class="down">▼</span>');
+  const rows = D.compare.map((c) => `<tr>
+    <td><i class="sw" style="background:${COL[c.sport] || COL.Other}"></i> ${c.sport}</td>
+    <td>${c.now.km.toFixed(1)} km${arrow(c.now.km, c.avg.km)}<span class="vs">avg ${c.avg.km.toFixed(1)}</span></td>
+    <td>${fmtMin(c.now.min)}<span class="vs">avg ${fmtMin(c.avg.min)}</span></td>
+    <td>${c.now.n}<span class="vs">avg ${c.avg.n.toFixed(1)}</span></td></tr>`).join("");
+  $("#compare").innerHTML = `<table><thead><tr><th>Sport</th><th>Distance</th><th>Time</th><th>Sessions</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function zonesBlock() {
+  const z = D.zones, total = z.reduce((a, b) => a + b, 0);
+  const ramp = ["#0f4f6b", "#16708f", "#1a9ccb", "#4cbfe6", "#9ee3f7"];
+  const names = ["Z1 Recovery", "Z2 Easy", "Z3 Aerobic", "Z4 Threshold", "Z5 Max"];
+  if (!total) { $("#zones").innerHTML = `<div class="empty">No heart-rate data in the last 4 weeks.</div>`; return; }
+  $("#zones").innerHTML = `<div class="zbar">${z.map((v, i) => v ? `<div data-i="${i}" style="flex:${v};background:${ramp[i]}"></div>` : "").join("")}</div>
+    <div class="zlegend">${z.map((v, i) => `<div><i class="sw" style="background:${ramp[i]}"></i> Z${i + 1}<b>${Math.round((v / total) * 100)}%</b>${v} min</div>`).join("")}</div>`;
+  document.querySelectorAll(".zbar div").forEach((d) => {
+    const i = +d.dataset.i;
+    d.addEventListener("pointermove", (e) => showTip(`<div class="t">${names[i]}</div>${row(ramp[i], "Minutes", z[i])}${row(ramp[i], "Share", Math.round((z[i] / total) * 100) + "%")}`, e));
+    d.addEventListener("pointerleave", hideTip);
+  });
+  const easy = (z[0] + z[1]) / total;
+  $("#hrv-note").innerHTML = `<b style="color:var(--text)">${Math.round(easy * 100)}% easy.</b> ` +
+    (easy < 0.6 ? "Most runners get faster by slowing most runs down to zone 2 and saving the hard efforts for one or two sessions a week." : "Good balance of easy and hard work.") +
+    (D.hasHrv ? "" : `<br><span style="color:var(--muted)">HRV isn't recorded by your watch, so it's left out.</span>`);
+}
+
+function records() {
+  $("#records").innerHTML = D.records.map((r) =>
+    `<div class="panel rec"><div class="label">${r.label}</div><div class="value">${r.value}</div><div class="when">${fmtDayY(r.d)} · ${r.note}</div></div>`).join("");
+  $("#toprun").innerHTML = `<table><thead><tr><th>Date</th><th>Run</th><th>Distance</th><th>Time</th><th>Avg HR</th></tr></thead><tbody>${
+    D.topRuns.map((r) => `<tr><td>${fmtDayY(r.d)}</td><td style="text-align:left;color:var(--text-2)">${r.name}</td><td>${r.km.toFixed(1)} km</td><td>${fmtHM(r.min / 60)}</td><td>${r.hr ? Math.round(r.hr) : "–"}</td></tr>`).join("")
+  }</tbody></table>`;
+}
+
+/* ---------- charts that respond to the range filter & resize ---------- */
+let RANGE = 182;
+function sliceDaily(keys) {
+  const n = D.daily.dates.length, start = Math.max(0, n - RANGE);
+  const out = {};
+  keys.concat("dates").forEach((k) => (out[k] = D.daily[k].slice(start)));
+  return out;
+}
+function inRange(iso) { return daysUntil(iso) > -RANGE; }
+
+function charts() {
+  const wk = D.weeks;
+  const avg4 = D.tiles.avg4Km;
+  barChart($("#c-weekkm"), {
+    labels: wk.labels, stacks: [{ name: "Running", values: wk.run_km, color: "var(--run)" }],
+    fmt: (v) => `${v.toFixed(1)} km`, highlightLast: true,
+    avgLine: avg4 ? { v: avg4, label: `4-WK AVG ${avg4} KM` } : null,
+  });
+  const other = wk.hours.Golf.map((v, i) => +(v + wk.hours.Other[i]).toFixed(2));
+  $("#lg-hours").innerHTML = [["Run", "var(--run)"], ["Ride", "var(--ride)"], ["Golf & other", "var(--other)"]]
+    .map(([n, c]) => `<span><i class="sw" style="background:${c}"></i>${n}</span>`).join("");
+  barChart($("#c-hours"), {
+    labels: wk.labels, height: 200,
+    stacks: [
+      { name: "Run", values: wk.hours.Run, color: "var(--run)" },
+      { name: "Ride", values: wk.hours.Ride, color: "var(--ride)" },
+      { name: "Golf & other", values: other, color: "var(--other)" },
+    ],
+    fmt: (v) => fmtHM(v), fmtTick: (t) => `${t}h`, highlightLast: true,
+  });
+
+  const d1 = sliceDaily(["load", "acute", "chronic"]);
+  const lineMax = Math.max(1, ...d1.acute.filter((v) => v != null), ...d1.chronic.filter((v) => v != null));
+  timeChart($("#c-load"), {
+    dates: d1.dates, zero: true, fmt: (v) => v.toFixed(0), yCap: lineMax * 2.2,
+    series: [
+      { name: "Daily load", values: d1.load, kind: "bars", color: "var(--run)", opacity: 0.35 },
+      { name: "28-day", values: d1.chronic, color: "var(--ride)", width: 2 },
+      { name: "7-day", values: d1.acute, color: "var(--run)", width: 2.5, glow: true },
+    ],
+  });
+
+  const runs = D.runs.filter((r) => inRange(r.d));
+  timeChart($("#c-pace"), {
+    dates: runs.map((r) => r.d), invert: true, step: 30, fmt: (v) => `${fmtPace(v)} /km`, fmtTick: fmtPace,
+    emptyText: "No runs in this range.",
+    series: [
+      { name: "Pace", values: runs.map((r) => r.pace), kind: "dots", color: "var(--run)", r: 3.5 },
+      { name: "6-run avg", values: runs.map((r) => r.avg), color: "var(--hud)", width: 2, glow: true },
+    ],
+    tipExtra: (i) => `<div class="n">${runs[i].km.toFixed(1)} km${runs[i].hr ? ` · ${Math.round(runs[i].hr)} bpm` : ""}${runs[i].tread ? " · treadmill" : ""}</div>`,
+  });
+
+  const d2 = sliceDaily(["rhr", "rhr7"]);
+  timeChart($("#c-rhr"), {
+    dates: d2.dates, fmt: (v) => `${Math.round(v)} bpm`,
+    series: [
+      { name: "Resting HR", values: d2.rhr, kind: "dots", color: "var(--run)", r: 2.2, opacity: 0.5 },
+      { name: "7-day avg", values: d2.rhr7, color: "var(--hud)", width: 2, glow: true },
+    ],
+  });
+
+  const d3 = sliceDaily(["sleep", "sleep7"]);
+  timeChart($("#c-sleep"), {
+    dates: d3.dates, zero: true, fmt: fmtHM, fmtTick: (t) => `${t}h`,
+    band: { lo: 7, hi: 9, label: "7–9 h target" },
+    series: [
+      { name: "Slept", values: d3.sleep, kind: "bars", color: "var(--run)", opacity: 0.45 },
+      { name: "7-night avg", values: d3.sleep7, color: "var(--hud)", width: 2, glow: true },
+    ],
+  });
+
+  const g = D.weightGoal;
+  const ws = D.weights.filter((w) => inRange(w.d) || w === D.weights[D.weights.length - 1]);
+  const wsAll = ws.length >= 2 ? ws : D.weights;
+  timeChart($("#c-weight"), {
+    dates: wsAll.map((w) => w.d), fmt: (v) => `${v.toFixed(1)} lb`,
+    band: { lo: g.low, hi: g.high, label: `Goal ${g.low}–${g.high} lb` },
+    emptyText: "No weigh-ins yet. Step on a Garmin scale or add one to config.json.",
+    series: [
+      { name: "Weight", values: wsAll.map((w) => w.lb), color: "var(--run)", width: 2 },
+      { name: "Weigh-in", values: wsAll.map((w) => w.lb), kind: "dots", color: "var(--hud)", r: 3.5, tip: false },
+    ],
+  });
+}
+
+header(); missions(); tiles(); compareTable(); zonesBlock(); records(); charts();
+document.querySelectorAll("#range button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("#range button").forEach((x) => x.classList.toggle("on", x === b));
+  RANGE = +b.dataset.d;
+  charts();
+}));
+let rt;
+addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(charts, 150); });
+addEventListener("scroll", hideTip, { passive: true });
+</script>
+</body>
+</html>

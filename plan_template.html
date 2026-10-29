@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marathon Protocol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #050a10;
+  --surface: #0c1622;
+  --surface-2: #0f1d2c;
+  --hud: #5fe0ff;
+  --hud-dim: rgba(95, 224, 255, 0.16);
+  --text: #e6f6ff;
+  --text-2: #9fb6c6;
+  --muted: #6c8191;
+  --grid: #16283a;
+  --axis: #24405a;
+  --run: #1a9ccb;
+  --k-easy: #1a9ccb;
+  --k-threshold: #c97b20;
+  --k-intervals: #d6608f;
+  --k-marathon: #9085e9;
+  --k-long: #5fe0ff;
+  --k-test: #fab219;
+  --k-rest: #383835;
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --display: "Orbitron", system-ui, sans-serif;
+  --body: "Rajdhani", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(26, 156, 203, 0.18), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(95, 224, 255, 0.07), transparent 60%),
+    var(--bg);
+  color: var(--text); font-family: var(--body); font-size: 16px; line-height: 1.45; min-height: 100vh;
+}
+body::before { content: ""; position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(95,224,255,0.025) 0 1px, transparent 1px 3px); }
+.wrap { position: relative; max-width: 1200px; margin: 0 auto; padding: 24px 24px 64px; }
+a { color: var(--hud); }
+
+header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.brand { font-family: var(--display); font-weight: 700; letter-spacing: 0.28em; font-size: 20px; color: var(--hud); text-shadow: 0 0 18px rgba(95,224,255,0.55); }
+.sub { font-family: var(--display); font-size: 10px; letter-spacing: 0.3em; color: var(--muted); margin-top: 4px; }
+.count { margin-left: auto; text-align: right; }
+.count .big { font-family: var(--display); font-weight: 700; font-size: 34px; color: var(--text); line-height: 1; }
+.count .big small { font-size: 12px; color: var(--muted); letter-spacing: 0.2em; margin-left: 6px; }
+.count .when { color: var(--text-2); font-size: 14px; }
+
+.panel { position: relative; background: linear-gradient(180deg, var(--surface-2), var(--surface)); border: 1px solid var(--hud-dim); border-radius: 6px; padding: 18px; }
+.panel::before, .panel::after { content: ""; position: absolute; width: 14px; height: 14px; border: 2px solid var(--hud); opacity: 0.7; pointer-events: none; }
+.panel::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; border-top-left-radius: 6px; }
+.panel::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; border-bottom-right-radius: 6px; }
+h2 { font-family: var(--display); font-weight: 500; font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--hud); margin: 0 0 4px; }
+.q { color: var(--text-2); font-size: 15px; margin: 0 0 12px; }
+.section-title { display: flex; align-items: center; gap: 12px; margin: 36px 0 14px; }
+.section-title h3 { font-family: var(--display); font-weight: 700; font-size: 14px; letter-spacing: 0.3em; margin: 0; white-space: nowrap; }
+.section-title .rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--hud-dim), transparent); }
+.grid { display: grid; gap: 16px; }
+.grid > * { min-width: 0; }
+.g2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+.g3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.g4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+/* status */
+.stat .k { font-family: var(--display); font-size: 10px; letter-spacing: 0.22em; color: var(--muted); text-transform: uppercase; }
+.stat .v { font-size: 34px; font-weight: 700; line-height: 1.1; margin-top: 6px; }
+.stat .v small { font-size: 15px; color: var(--text-2); font-weight: 500; margin-left: 4px; }
+.stat .d { font-size: 14px; color: var(--text-2); margin-top: 4px; }
+.gap { margin-top: 10px; height: 8px; border-radius: 4px; background: var(--grid); position: relative; overflow: hidden; }
+.gap i { position: absolute; inset: 0 auto 0 0; background: var(--hud); border-radius: 4px; box-shadow: 0 0 10px rgba(95,224,255,0.6); }
+
+/* tables */
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { font-family: var(--display); font-weight: 500; font-size: 10px; letter-spacing: 0.16em; color: var(--muted); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--axis); text-transform: uppercase; }
+td { padding: 9px 8px; border-bottom: 1px solid var(--grid); font-size: 15px; vertical-align: top; }
+td.num { text-align: right; white-space: nowrap; font-weight: 600; }
+th.num { text-align: right; }
+td .why { color: var(--text-2); font-size: 14px; }
+.tablewrap { overflow-x: auto; }
+tr.hl td { background: rgba(95,224,255,0.07); }
+
+/* kinds */
+.kind { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); white-space: nowrap; }
+.kind i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.badge { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--hud-dim); color: var(--text-2); margin: 4px 4px 0 0; white-space: nowrap; }
+.badge.gym { border-color: rgba(201,123,32,0.5); color: #e7a95a; }
+.badge.sauna { border-color: rgba(214,96,143,0.5); color: #e88fb2; }
+.badge.heat { border-color: rgba(250,178,25,0.6); color: var(--warning); }
+
+/* week cards */
+.days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+.day { border: 1px solid var(--hud-dim); border-radius: 6px; padding: 10px; background: rgba(12,22,34,0.7); min-height: 150px; display: flex; flex-direction: column; gap: 4px; }
+.day.today { border-color: var(--hud); box-shadow: 0 0 0 1px var(--hud), 0 0 22px rgba(95,224,255,0.25); }
+.day.past { opacity: 0.6; }
+.day .dw { font-family: var(--display); font-size: 11px; letter-spacing: 0.18em; color: var(--muted); display: flex; justify-content: space-between; }
+.day.today .dw { color: var(--hud); }
+.day .km { font-size: 22px; font-weight: 700; line-height: 1.1; }
+.day .km small { font-size: 12px; color: var(--muted); font-weight: 500; margin-left: 2px; }
+.day .t { font-size: 13.5px; color: var(--text-2); line-height: 1.35; }
+.done { color: var(--good); font-weight: 700; font-size: 13px; }
+
+details.week { border: 1px solid var(--hud-dim); border-radius: 6px; background: rgba(12,22,34,0.6); margin-bottom: 8px; }
+details.week[open] { background: rgba(15,29,44,0.9); }
+details.week summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 56px 1fr auto auto; gap: 12px; align-items: center; padding: 10px 14px; }
+details.week summary::-webkit-details-marker { display: none; }
+details.week summary .wn { font-family: var(--display); font-size: 13px; color: var(--hud); letter-spacing: 0.1em; }
+details.week summary .ph { font-weight: 600; }
+details.week summary .ph span { color: var(--muted); font-weight: 500; font-size: 14px; margin-left: 8px; }
+details.week summary .tot { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+details.week summary .tot small { color: var(--muted); font-weight: 500; }
+details.week summary .chev { color: var(--muted); transition: transform .15s; }
+details.week[open] summary .chev { transform: rotate(90deg); }
+details.week.current { border-color: var(--hud); }
+.wbody { padding: 0 14px 12px; }
+.wbody table td:first-child { white-space: nowrap; color: var(--text-2); width: 88px; }
+
+/* chart */
+.chart { display: block; overflow: visible; touch-action: pan-y; }
+.chart .gl { stroke: var(--grid); }
+.chart .base { stroke: var(--axis); }
+.chart .tk { fill: var(--muted); font-size: 12px; font-family: var(--body); font-variant-numeric: tabular-nums; }
+.chart .ph { fill: var(--muted); font-size: 11px; font-family: var(--display); letter-spacing: 0.12em; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; color: var(--text-2); margin: -4px 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* protocol lists */
+ul.ex { margin: 0; padding: 0; list-style: none; }
+ul.ex li { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--grid); font-size: 15px; }
+ul.ex li:last-child { border-bottom: 0; }
+ul.ex li b { white-space: nowrap; color: var(--text); }
+ul.ex li span { color: var(--text-2); }
+ul.pts { margin: 0; padding-left: 18px; color: var(--text); }
+ul.pts li { margin: 5px 0; }
+ul.pts li::marker { color: var(--hud); }
+.note { font-size: 14px; color: var(--text-2); margin-top: 10px; }
+.warnbox { border-left: 3px solid var(--warning); padding: 8px 12px; background: rgba(250,178,25,0.06); font-size: 14.5px; color: var(--text); margin-top: 12px; }
+ol.refs { margin: 0; padding-left: 20px; color: var(--text-2); font-size: 14px; }
+ol.refs li { margin: 6px 0; }
+ol.refs b { color: var(--text); font-weight: 600; }
+
+#tip { position: fixed; pointer-events: none; z-index: 10; opacity: 0; transition: opacity .12s; background: rgba(8,16,26,0.96); border: 1px solid var(--hud); border-radius: 4px; padding: 8px 10px; font-size: 14px; min-width: 150px; box-shadow: 0 0 18px rgba(95,224,255,0.25); }
+#tip .t { font-family: var(--display); font-size: 10px; letter-spacing: 0.16em; color: var(--hud); margin-bottom: 4px; text-transform: uppercase; }
+#tip .r { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#tip .r span { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); }
+#tip .r b { font-variant-numeric: tabular-nums; }
+footer { margin-top: 40px; color: var(--muted); font-size: 13px; text-align: center; }
+
+@media (max-width: 900px) { .days { grid-template-columns: repeat(2, minmax(0, 1fr)); } .day { min-height: 0; } }
+@media (max-width: 640px) {
+  .wrap { padding: 16px 16px 48px; }
+  .count { margin-left: 0; text-align: left; }
+  .g2, .g3 { grid-template-columns: 1fr; }
+  .g4 { grid-template-columns: 1fr 1fr; }
+  .stat .v { font-size: 28px; }
+  details.week summary { grid-template-columns: 44px 1fr auto; }
+  details.week summary .chev { display: none; }
+  .section-title { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="brand">MARATHON PROTOCOL</div>
+      <div class="sub">26-WEEK BUILD · RESEARCH-BASED · PACES FROM YOUR FITNESS</div>
+    </div>
+    <div class="count"><div class="big" id="days"></div><div class="when" id="when"></div></div>
+  </header>
+
+  <div class="grid g4" id="status"></div>
+
+  <div class="section-title"><h3>THIS WEEK</h3><div class="rule"></div></div>
+  <div class="panel">
+    <h2 id="tw-title"></h2>
+    <p class="q" id="tw-sub"></p>
+    <div class="days" id="thisweek"></div>
+  </div>
+
+  <div class="section-title"><h3>PACES</h3><div class="rule"></div></div>
+  <div class="grid g2">
+    <div class="panel">
+      <h2>Training paces</h2>
+      <p class="q" id="pace-src"></p>
+      <div class="tablewrap"><table id="paces"></table></div>
+    </div>
+    <div class="panel">
+      <h2>Checkpoints</h2>
+      <p class="q">Each test resets your paces. Tell Claude the result and it updates the plan.</p>
+      <div class="tablewrap"><table id="checks"></table></div>
+      <h2 style="margin-top:18px">Half marathon → marathon goal</h2>
+      <p class="q">What Feb 14 says about Apr 25 (VDOT model).</p>
+      <div class="tablewrap"><table id="ladder"></table></div>
+    </div>
+  </div>
+
+  <div class="section-title"><h3>VOLUME</h3><div class="rule"></div></div>
+  <div class="panel">
+    <h2>Weekly running · planned vs done</h2>
+    <p class="q">Am I hitting the build? Small increases with a down week every 3–4 weeks keep injury risk low.</p>
+    <div class="legend">
+      <span><i class="sw" style="background:transparent;border:1.5px solid var(--hud)"></i>Planned km</span>
+      <span><i class="sw" style="background:var(--run)"></i>Done (Garmin)</span>
+    </div>
+    <div id="c-vol"></div>
+  </div>
+
+  <div class="section-title"><h3>FULL SCHEDULE</h3><div class="rule"></div></div>
+  <div class="legend" id="kinds" style="margin-bottom:12px"></div>
+  <div id="schedule"></div>
+
+  <div class="section-title"><h3>GYM</h3><div class="rule"></div></div>
+  <div class="grid g3">
+    <div class="panel">
+      <h2>Gym A · Monday · Strength</h2>
+      <p class="q">Heavy, low reps, full rest (2–3 min). Strength without bulk.</p>
+      <ul class="ex">
+        <li><span>Trap-bar deadlift or back squat</span><b>3–4 × 4–6</b></li>
+        <li><span>Bulgarian split squat</span><b>3 × 6 / leg</b></li>
+        <li><span>Single-leg Romanian deadlift</span><b>3 × 8 / leg</b></li>
+        <li><span>Calf raises, heavy (seated + standing)</span><b>3 × 10–15</b></li>
+        <li><span>Plank / side plank</span><b>3 × 30–45 s</b></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Gym B · Thursday · Power</h2>
+      <p class="q">Explosive, quality over fatigue. Stop each set while you're still springy.</p>
+      <ul class="ex">
+        <li><span>Pogo hops</span><b>3 × 20</b></li>
+        <li><span>Box jumps (step down)</span><b>3 × 5</b></li>
+        <li><span>Bounding, from week 5</span><b>3 × 20 m</b></li>
+        <li><span>Hip thrust</span><b>3 × 6</b></li>
+        <li><span>Step-ups, weighted</span><b>3 × 8 / leg</b></li>
+        <li><span>Copenhagen plank</span><b>2 × 20 s / side</b></li>
+        <li><span>Tibialis raises</span><b>2 × 15</b></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Gym C · Friday · Optional</h2>
+      <p class="q">Upper body, core and mobility. 30–40 min, nothing that leaves your legs sore.</p>
+      <ul class="ex">
+        <li><span>Pull-ups or lat pulldown</span><b>3 × 6–10</b></li>
+        <li><span>Push-ups or dumbbell press</span><b>3 × 8–12</b></li>
+        <li><span>Dead bug / Pallof press</span><b>3 × 10</b></li>
+        <li><span>Hip and ankle mobility</span><b>10 min</b></li>
+      </ul>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h2>Rules</h2>
+    <ul class="pts">
+      <li><b>Weeks 1–4:</b> learn the movements at 2–3 sets of 8–10 with moderate weight. Go heavy from week 5.</li>
+      <li><b>Lift after the run</b>, ideally 6+ hours later. Gym B goes on the same day as Thursday's quality run, so hard days stay hard and easy days stay easy.</li>
+      <li><b>Down weeks:</b> cut sets by a third. <b>Taper (weeks 23–24):</b> one session, half the sets, same weights. <b>Race week:</b> no lifting.</li>
+      <li>Heavy strength and plyometric training improves running economy, the oxygen cost of a given pace, without adding much body mass (Balsalobre-Fernández et al., 2016).</li>
+    </ul>
+  </div>
+
+  <div class="section-title"><h3>SAUNA</h3><div class="rule"></div></div>
+  <div class="grid g2">
+    <div class="panel">
+      <h2>Protocol</h2>
+      <ul class="pts">
+        <li><b>When:</b> straight after easy runs or gym sessions (Mon, Wed, Sat). That's when your core temperature is already up, which is how the studies did it.</li>
+        <li><b>Heat:</b> 80–90 °C. <b>Time:</b> start at 10–15 min and build to 25–30 min over the first month. Split it (2 × 12–15 min with a cool break) if that's easier.</li>
+        <li><b>Normal weeks:</b> 3 sessions. <b>Heat blocks</b> (weeks 12–14 before the half, 21–23 before the marathon): 4 sessions, adding Friday.</li>
+        <li><b>Hydration:</b> weigh yourself before and after. Drink 1.25–1.5 L per kg lost, with some sodium (electrolyte drink or a salty snack).</li>
+        <li><b>Race weeks:</b> short sessions Monday and Wednesday only. Nothing in the 3 days before a race.</li>
+      </ul>
+      <div class="warnbox"><b>Skip the sauna when:</b> resting HR is 5+ bpm above your normal, you're ill, you've had alcohol, you feel dizzy, or right after a long run (you're already dehydrated). If you have any heart condition, ask your doctor first.</div>
+    </div>
+    <div class="panel">
+      <h2>What the evidence says</h2>
+      <ul class="pts">
+        <li><b>Scoon et al. (2007):</b> 6 male runners did ~30 min of sauna after training for 3 weeks. Time to exhaustion rose about 32% and plasma volume about 7%.</li>
+        <li><b>Stanley et al. (2015):</b> post-exercise sauna raised plasma volume in trained cyclists within days.</li>
+        <li><b>Kirby et al. (2021):</b> post-exercise sauna improved markers of exercise capacity in trained middle-distance runners, in both hot and normal conditions.</li>
+        <li><b>The honest read:</b> these are small studies (6–20 people), and none tested a marathon directly. The mechanism (more plasma volume, better heat tolerance) is solid; the size of the race-day benefit is uncertain. It's a low-cost add-on, not a substitute for running.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section-title"><h3>FUEL &amp; WEIGHT</h3><div class="rule"></div></div>
+  <div class="grid g2">
+    <div class="panel">
+      <h2>Losing weight while training</h2>
+      <ul class="pts">
+        <li><b>Deficit on easy days only:</b> about 300–500 kcal under maintenance. Eat fully on quality and long-run days, so the sessions that make you faster aren't underfuelled.</li>
+        <li><b>Rate:</b> about 0.5–1% of body weight a week (roughly 1–2 lb now). Faster than that costs training quality and muscle.</li>
+        <li><b>Protein:</b> about 1.6–2.2 g per kg per day, spread across meals (Morton et al., 2018).</li>
+        <li><b>No deficit in the taper</b> (weeks 23–25) or race week.</li>
+        <li>Lighter means less weight to carry each stride, so running economy improves as you lose it. This is your biggest lever toward a faster time.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Race fuelling</h2>
+      <ul class="pts">
+        <li><b>Long runs over 90 min:</b> start at 30–60 g carbs per hour and train your gut up to <b>60–90 g/h</b> by week 21 (Jeukendrup, 2014). Use the gels or drink you'll race with.</li>
+        <li><b>Carb-load:</b> 10–12 g carbs per kg per day for the 36–48 hours before the race (Burke et al., 2011). Low fibre, familiar foods.</li>
+        <li><b>Race morning:</b> 1–4 g carbs per kg, 1–4 hours before the start.</li>
+        <li><b>Race:</b> 60–90 g/h from early on, plus fluid to thirst.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section-title"><h3>SCIENCE</h3><div class="rule"></div></div>
+  <div class="grid g2">
+    <div class="panel">
+      <h2>Why the plan looks like this</h2>
+      <ul class="pts">
+        <li><b>Mostly easy:</b> about 80% of running is easy, below your HR cap, and about 20% is hard. Elite endurance athletes train this way (Seiler, 2010), and world-class distance runners use a mostly-easy, pyramid-shaped mix (Casado et al., 2022).</li>
+        <li><b>Gradual build:</b> mileage rises in small steps with a down week every 3–4 weeks. Runners who increased volume by more than 30% over two weeks were more likely to get injured (Nielsen et al., 2014).</li>
+        <li><b>Paces from fitness, not from the goal:</b> each pace comes from your current VDOT (Daniels' model), and the checkpoints update it. Training at goal pace before you're fit enough mostly adds injury risk.</li>
+        <li><b>Marathon specificity late:</b> threshold and VO2 work build the engine in weeks 5–14; marathon-pace runs and long runs up to 30 km come in weeks 17–22.</li>
+        <li><b>Taper:</b> volume drops about 20%, 40% and then 65% over the last three weeks while some intensity stays. That's the pattern that improved performance most in a meta-analysis (Bosquet et al., 2007).</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>References</h2>
+      <ol class="refs">
+        <li><b>Seiler S.</b> What is best practice for training intensity and duration distribution in endurance athletes? IJSPP, 2010.</li>
+        <li><b>Casado A, et al.</b> Training periodization, methods, intensity distribution, and volume in highly trained and elite distance runners: a systematic review. IJSPP, 2022.</li>
+        <li><b>Nielsen RO, et al.</b> Excessive progression in weekly running distance and risk of running-related injuries. JOSPT, 2014.</li>
+        <li><b>Daniels J.</b> Daniels' Running Formula (VDOT model, with Gilbert).</li>
+        <li><b>Balsalobre-Fernández C, et al.</b> Effects of strength training on running economy in highly trained runners: a systematic review with meta-analysis. JSCR, 2016.</li>
+        <li><b>Bosquet L, et al.</b> Effects of tapering on performance: a meta-analysis. MSSE, 2007.</li>
+        <li><b>Riegel PS.</b> Athletic records and human endurance. American Scientist, 1981.</li>
+        <li><b>Scoon GSM, et al.</b> Effect of post-exercise sauna bathing on the endurance performance of competitive male runners. J Sci Med Sport, 2007.</li>
+        <li><b>Stanley J, et al.</b> Effect of sauna-based heat acclimation on plasma volume and heart rate variability. Eur J Appl Physiol, 2015.</li>
+        <li><b>Kirby NV, et al.</b> Intermittent post-exercise sauna bathing improves markers of exercise capacity in hot and temperate conditions in trained middle-distance runners. Eur J Appl Physiol, 2021.</li>
+        <li><b>Morton RW, et al.</b> A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains. BJSM, 2018.</li>
+        <li><b>Jeukendrup A.</b> A step towards personalized sports nutrition: carbohydrate intake during exercise. Sports Med, 2014.</li>
+        <li><b>Burke LM, et al.</b> Carbohydrates for training and competition. J Sports Sci, 2011.</li>
+      </ol>
+    </div>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+<div id="tip"></div>
+
+<script>
+const D = __DATA__;
+const NS = "http://www.w3.org/2000/svg";
+const $ = (s) => document.querySelector(s);
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const toDate = (s) => new Date(s + "T00:00:00");
+const md = (s) => { const d = toDate(s); return `${MON[d.getMonth()]} ${d.getDate()}`; };
+const mdy = (s) => `${md(s)}, ${s.slice(0, 4)}`;
+const pad = (n) => String(n).padStart(2, "0");
+const now = new Date();
+const TODAY = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+const KIND = {
+  easy: ["Easy", "var(--k-easy)"], strides: ["Easy + strides", "var(--k-easy)"], hills: ["Hills", "var(--k-threshold)"],
+  threshold: ["Threshold", "var(--k-threshold)"], intervals: ["Intervals", "var(--k-intervals)"], marathon: ["Marathon pace", "var(--k-marathon)"],
+  long: ["Long run", "var(--k-long)"], test: ["Checkpoint", "var(--k-test)"], race: ["Race", "var(--k-test)"], rest: ["Rest", "var(--k-rest)"],
+};
+const GYM = { A: "Gym A · strength", B: "Gym B · power", C: "Gym C · optional", "A-lite": "Gym A · light", intro: "Gym intro · bodyweight" };
+const kindTag = (k) => `<span class="kind"><i style="background:${KIND[k][1]}"></i>${KIND[k][0]}</span>`;
+const extras = (d) => (d.gym ? `<span class="badge gym">${GYM[d.gym]}</span>` : "") + (d.sauna ? `<span class="badge sauna">Sauna ${d.sauna} min</span>` : "");
+
+const tip = $("#tip");
+function showTip(html, e) {
+  tip.innerHTML = html; tip.style.opacity = 1;
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 14;
+  tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, y) + "px";
+}
+const hideTip = () => (tip.style.opacity = 0);
+
+/* header + status */
+const daysLeft = Math.round((toDate(D.race) - toDate(TODAY)) / 864e5);
+$("#days").innerHTML = `${daysLeft}<small>DAYS</small>`;
+$("#when").textContent = `Marathon · ${mdy(D.race)}`;
+const pct = Math.max(0, Math.min(1, (D.vdot - 30) / (D.goalVdot - 30)));
+$("#status").innerHTML = [
+  ["Current VDOT", `${D.vdot}`, D.source.startsWith("provisional") ? "Provisional until the Nov 17 5 km test" : "From your latest checkpoint"],
+  ["Marathon today", D.predict.M, `Half ${D.predict.HM} · 10 km ${D.predict["10K"]} · 5 km ${D.predict["5K"]}`],
+  ["3:00 needs", `VDOT ${D.goalVdot}`, `Half ${D.sub3.HM} · 10 km ${D.sub3["10K"]} · 5 km ${D.sub3["5K"]}<div class="gap"><i style="width:${pct * 100}%"></i></div>`],
+  ["Easy HR cap", D.easyCap ? `${D.easyCap}<small>bpm</small>` : "–", "Top of your Garmin zone 2. Easy runs stay under it, even if that means walking hills."],
+].map(([k, v, d]) => `<div class="panel stat"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+
+/* this week */
+const weekIdx = Math.max(0, D.weeks.findIndex((w) => w.days.some((d) => d.date === TODAY)));
+const cur = D.weeks.find((w) => w.days.some((d) => d.date === TODAY)) || D.weeks.find((w) => w.days[6].date >= TODAY) || D.weeks[D.weeks.length - 1];
+$("#tw-title").textContent = `Week ${cur.n} · ${cur.phase}`;
+$("#tw-sub").textContent = `${md(cur.start)} – ${md(cur.days[6].date)} · ${cur.km} km planned · ${cur.actual} km done${cur.heat ? " · heat block" : ""} · ${cur.gymNote}`;
+$("#thisweek").innerHTML = cur.days.map((d) => {
+  const cls = d.date === TODAY ? "today" : d.date < TODAY ? "past" : "";
+  const done = d.done ? `<div class="done">✓ ${d.done.toFixed(1)} km done</div>` : "";
+  return `<div class="day ${cls}"><div class="dw"><span>${d.dow.toUpperCase()} ${toDate(d.date).getDate()}</span>${d.date === TODAY ? "<span>TODAY</span>" : ""}</div>
+    ${kindTag(d.kind)}<div class="km">${d.km ? `${d.km}<small>km</small>` : "—"}</div><div class="t">${d.title}</div>${done}<div>${extras(d)}</div></div>`;
+}).join("");
+
+/* paces */
+$("#pace-src").textContent = `VDOT ${D.vdot} · ${D.source}`;
+const P = D.paces;
+$("#paces").innerHTML = `<thead><tr><th>Pace</th><th class="num">Per km</th><th>Used for</th></tr></thead><tbody>${[
+  ["Easy (E)", P.E, `Most of your running, long runs, recovery.${D.easyCap ? ` HR under ${D.easyCap}.` : ""} Slower is fine.`],
+  ["Marathon (M)", P.M, "Marathon-pace runs from week 14. Today's fitness, not the goal; updates with each checkpoint."],
+  ["Half marathon", P.HM, "Your starting pace for the Feb 14 half if fitness hasn't changed."],
+  ["Threshold (T)", P.T, "Comfortably hard; about one hour race effort. Cruise intervals and tempos."],
+  ["Interval (I)", P.I, "Hard; about 3–5 min reps. Builds VO2max."],
+  ["Repetition (R)", P.R, "Short fast strides and hill sprints: relaxed speed."],
+].map(([n, p, w]) => `<tr><td>${n}</td><td class="num">${p}</td><td class="why">${w}</td></tr>`).join("")}</tbody>`;
+
+/* checkpoints */
+const checks = [];
+D.weeks.forEach((w) => w.days.forEach((d) => { if (d.kind === "test" || d.kind === "race") checks.push({ ...d, n: w.n }); }));
+const half = D.ladder.find((l) => l.hm === "1:26:00");
+const target = {
+  "5": `3:00 pace: ${D.sub3["5K"].replace(/^0:/, "")}`, "10": `3:00 pace: ${D.sub3["10K"].replace(/^0:/, "")}`,
+  half: `3:00 pace: ${D.sub3.HM}`, full: "Goal set from the half and the Mar 9 test",
+};
+$("#checks").innerHTML = `<thead><tr><th>When</th><th>Test</th><th>For 3:00</th></tr></thead><tbody>${checks.map((c) => {
+  const kind = c.kind === "race" ? (c.title.startsWith("HALF") ? "half" : "full") : c.title.includes("10 km time trial") ? "10" : "5";
+  const name = { "5": "5 km time trial", "10": "10 km time trial", half: "Half marathon", full: "MARATHON" }[kind];
+  return `<tr class="${c.date === TODAY ? "hl" : ""}"><td>${md(c.date)}<div class="why">Week ${c.n}</div></td><td>${name}${c.done ? ` <span class="done">✓</span>` : ""}</td><td class="why">${target[kind]}</td></tr>`;
+}).join("")}</tbody>`;
+$("#ladder").innerHTML = `<thead><tr><th>Half time</th><th class="num">VDOT</th><th class="num">Marathon</th></tr></thead><tbody>${
+  D.ladder.map((l) => `<tr class="${l === half ? "hl" : ""}"><td>${l.hm}</td><td class="num">${l.v}</td><td class="num">${l.m}${l === half ? " · goal on" : ""}</td></tr>`).join("")}</tbody>`;
+
+/* volume chart */
+function volume() {
+  const host = $("#c-vol"); host.innerHTML = "";
+  const W = host.clientWidth || 800, H = 240, m = { l: 36, r: 8, t: 20, b: 26 };
+  const n = D.weeks.length, hi = Math.ceil(Math.max(...D.weeks.map((w) => Math.max(w.km, w.actual))) / 10) * 10;
+  const Y = (v) => H - m.b - (v / hi) * (H - m.t - m.b), band = (W - m.l - m.r) / n, bw = Math.max(4, band - 4);
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("width", W); svg.setAttribute("height", H); svg.setAttribute("class", "chart");
+  host.appendChild(svg);
+  const el = (tag, a) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+  const text = (x, y, s, cls, anchor) => { const t = el("text", { x, y, class: cls || "tk", "text-anchor": anchor || "start" }); t.textContent = s; };
+  for (let t = 0; t <= hi; t += 20) { el("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), class: t ? "gl" : "base" }); text(m.l - 6, Y(t) + 4, t, "tk", "end"); }
+  const LABEL = { Base: "BASE", Build: "BUILD", "Marathon-specific": "MARATHON", Taper: "TAPER" };
+  let lastPhase = "";
+  D.weeks.forEach((w, i) => {
+    const x = m.l + i * band + (band - bw) / 2, isCur = w === cur;
+    const phase = w.phase.split(" · ")[0];
+    if (phase !== lastPhase && LABEL[phase] && W > 500) { text(x, 12, LABEL[phase], "ph"); lastPhase = phase; }
+    el("rect", { x: x + 0.75, y: Y(w.km) + 0.75, width: bw - 1.5, height: Math.max(0, Y(0) - Y(w.km) - 0.75), fill: isCur ? "rgba(95,224,255,0.12)" : "none", stroke: "var(--hud)", "stroke-width": 1.5, opacity: isCur ? 1 : 0.55, rx: 2 });
+    if (w.actual > 0) el("rect", { x: x + 3, y: Y(Math.min(w.actual, hi)), width: Math.max(1, bw - 6), height: Y(0) - Y(Math.min(w.actual, hi)), fill: "var(--run)", rx: 2 });
+    if (i % (W < 500 ? 4 : 2) === 0) text(x + bw / 2, H - 8, `W${w.n}`, "tk", "middle");
+    const hit = el("rect", { x: m.l + i * band, y: m.t, width: band, height: H - m.t - m.b, fill: "transparent" });
+    const show = (e) => { hit.setAttribute("fill", "rgba(95,224,255,0.06)");
+      showTip(`<div class="t">Week ${w.n} · ${md(w.start)}</div><div class="r"><span>${w.phase}</span></div><div class="r"><span><i class="sw" style="border:1.5px solid var(--hud)"></i>Planned</span><b>${w.km} km</b></div><div class="r"><span><i class="sw" style="background:var(--run)"></i>Done</span><b>${w.actual} km</b></div>`, e); };
+    hit.addEventListener("pointermove", show); hit.addEventListener("pointerdown", show);
+    hit.addEventListener("pointerleave", () => { hideTip(); hit.setAttribute("fill", "transparent"); });
+  });
+}
+
+/* full schedule */
+$("#kinds").innerHTML = ["easy", "hills", "threshold", "intervals", "marathon", "long", "test", "rest"].map((k) => `<span>${kindTag(k)}</span>`).join("");
+$("#schedule").innerHTML = D.weeks.map((w) => {
+  const isCur = w === cur;
+  const rows = w.days.map((d) => `<tr class="${d.date === TODAY ? "hl" : ""}"><td>${d.dow} ${md(d.date)}</td><td>${kindTag(d.kind)}<div>${d.title}</div><div>${extras(d)}</div></td>
+    <td class="num">${d.km ? d.km + " km" : "—"}${d.done ? `<div class="done">✓ ${d.done.toFixed(1)}</div>` : ""}</td></tr>`).join("");
+  return `<details class="week${isCur ? " current" : ""}"${isCur ? " open" : ""}><summary><span class="wn">W${w.n}</span>
+    <span class="ph">${w.phase}<span>${md(w.start)}${w.heat ? " · heat block" : ""}</span></span>
+    <span class="tot">${w.km}<small> km</small>${w.actual ? ` <small>· ${w.actual} done</small>` : ""}</span><span class="chev">▸</span></summary>
+    <div class="wbody"><p class="q" style="margin:4px 0 8px">${w.gymNote}</p><div class="tablewrap"><table>${rows}</table></div></div></details>`;
+}).join("");
+
+$("#foot").textContent = "Built from your Garmin data and config.json · Not medical advice: check with a doctor before a big jump in training load, sauna use or diet.";
+volume();
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(volume, 150); });
+addEventListener("scroll", hideTip, { passive: true });
+</script>
+</body>
+</html>
