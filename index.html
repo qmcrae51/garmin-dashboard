@@ -8,26 +8,167 @@
 <meta name="theme-color" content="#050a10">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <title>Training HQ</title>
 <style>
-:root { color-scheme: dark; --bg: #050a10; --card: #0c1622; --hud: #5fe0ff; --text: #e6f6ff; --muted: #7d93a3; }
+:root { color-scheme: dark; --bg: #050a10; --card: #0c1622; --card2: #0f1d2c; --hud: #5fe0ff; --hud-dim: rgba(95,224,255,.16);
+  --text: #e6f6ff; --text-2: #9fb6c6; --muted: #6c8191; --grid: #16283a;
+  --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  --display: "Orbitron", system-ui, sans-serif; --body: "Rajdhani", -apple-system, system-ui, sans-serif; }
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; background: radial-gradient(900px 500px at 20% -10%, rgba(26,156,203,.22), transparent 60%), var(--bg);
-  color: var(--text); font-family: -apple-system, system-ui, sans-serif; padding: max(24px, env(safe-area-inset-top)) 16px 32px; }
+  color: var(--text); font-family: var(--body); font-size: 16px; padding: max(20px, env(safe-area-inset-top)) 16px 32px; }
 .wrap { max-width: 560px; margin: 0 auto; }
-h1 { font-size: 13px; letter-spacing: .32em; color: var(--hud); margin: 8px 0 4px; text-shadow: 0 0 14px rgba(95,224,255,.5); }
-.sub { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
-.card { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 16px 18px; margin-bottom: 12px; border-radius: 14px;
+h1 { font-family: var(--display); font-size: 13px; letter-spacing: .32em; color: var(--hud); margin: 8px 0 2px; text-shadow: 0 0 14px rgba(95,224,255,.5); }
+.sub { color: var(--muted); font-size: 14px; margin-bottom: 18px; }
+.box { background: var(--card); border: 1px solid var(--hud-dim); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; }
+.k { font-family: var(--display); font-size: 10px; letter-spacing: .2em; color: var(--hud); text-transform: uppercase; margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 2px 10px; justify-content: space-between; }
+.k span { white-space: nowrap; }
+.k span:last-child { color: var(--muted); }
+.wo { font-size: 22px; font-weight: 600; line-height: 1.2; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip { padding: 3px 10px; border: 1px solid var(--hud-dim); border-radius: 20px; font-size: 14px; color: var(--text-2); }
+.chip b { color: var(--text); font-weight: 600; }
+.chip.ok { border-color: rgba(12,163,12,.5); }
+.advice { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: var(--card2); border-left: 3px solid var(--lc, var(--hud)); font-size: 16px; line-height: 1.35; }
+.advice .tag { font-family: var(--display); font-size: 10px; letter-spacing: .2em; color: var(--lc); display: block; margin-bottom: 3px; }
+.result { margin-top: 12px; font-size: 16px; line-height: 1.4; }
+.ic { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 12px; font-weight: 700; color: #050a10; background: var(--lc); vertical-align: -3px; margin-right: 4px; }
+.ready { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; }
+.score { width: 92px; height: 92px; }
+.score .big { font-family: var(--display); font-weight: 700; font-size: 26px; fill: var(--text); }
+.score .lab { font-family: var(--display); font-size: 9px; letter-spacing: .18em; fill: var(--muted); }
+.f { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; padding: 5px 0; border-bottom: 1px solid var(--grid); min-width: 0; }
+.f:last-child { border-bottom: 0; }
+.f .n { font-weight: 600; } .f .v { text-align: right; font-weight: 600; }
+.f .s { grid-column: 1 / 3; color: var(--muted); font-size: 14px; }
+.strip { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; margin-top: 12px; }
+.strip i { height: 14px; border-radius: 3px; background: var(--grid); }
+.strip-l { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; margin-top: 4px; }
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.day { padding: 6px 0 8px; border-radius: 8px; background: var(--card2); min-width: 0; }
+.day.now { outline: 1px solid var(--hud); }
+.day .dw { font-family: var(--display); font-size: 9px; letter-spacing: .12em; color: var(--muted); }
+.day .km { font-weight: 600; font-size: 15px; margin: 2px 0 4px; }
+.day .st { font-size: 15px; height: 20px; }
+.wsum { margin-top: 10px; color: var(--text-2); font-size: 15px; }
+.track .row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.track .big { font-family: var(--display); font-size: 24px; font-weight: 700; }
+.track .goal { color: var(--muted); }
+.track p { margin: 10px 0 0; color: var(--text-2); line-height: 1.4; }
+.track a, .more { color: var(--hud); text-decoration: none; }
+.card { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 14px 18px; margin-bottom: 10px; border-radius: 14px;
   background: var(--card); border: 1px solid rgba(95,224,255,.16); color: inherit; text-decoration: none; }
 .card:active { background: #12202f; }
 .t { font-size: 18px; font-weight: 600; }
 .d { grid-column: 1; color: var(--muted); font-size: 14px; }
 .go { grid-column: 2; grid-row: 1 / 3; align-self: center; color: var(--hud); font-size: 26px; }
+.sec { font-family: var(--display); font-size: 10px; letter-spacing: .3em; color: var(--muted); margin: 22px 0 10px; }
 </style>
 </head>
 <body><div class="wrap">
 <h1>TRAINING HQ</h1>
-<div class="sub">Updated Oct 29, 06:00</div>
-<a class="card" href="dashboard.html"><span class="t">J.A.R.V.I.S.</span><span class="d">Race countdowns, vitals, trends and records</span><span class="go">›</span></a><a class="card" href="plan.html"><span class="t">Training plan</span><span class="d">26 weeks to the marathon, with today's workout</span><span class="go">›</span></a><a class="card" href="commander.html"><span class="t">Mission control</span><span class="d">Fitness, fatigue and form, plus today's alert</span><span class="go">›</span></a><a class="card" href="coach.html"><span class="t">Coach view</span><span class="d">Morning flags and a note from your coach</span><span class="go">›</span></a><a class="card" href="brain.html"><span class="t">Athlete OS</span><span class="d">Every workout as a glowing 3D graph</span><span class="go">›</span></a>
-</div></body>
+<div class="sub" id="sub"></div>
+<div id="today"></div>
+<div id="ready"></div>
+<div id="week"></div>
+<div id="track"></div>
+<div class="sec">ALL SCREENS</div>
+<a class="card" href="progress.html"><span class="t">On track for 3:00?</span><span class="d">Predicted marathon, checkpoints and easy-run discipline</span><span class="go">›</span></a><a class="card" href="dashboard.html"><span class="t">J.A.R.V.I.S.</span><span class="d">Race countdowns, vitals, trends and records</span><span class="go">›</span></a><a class="card" href="plan.html"><span class="t">Training plan</span><span class="d">26 weeks to the marathon, with today's workout</span><span class="go">›</span></a><a class="card" href="commander.html"><span class="t">Mission control</span><span class="d">Fitness, fatigue and form, plus today's alert</span><span class="go">›</span></a><a class="card" href="coach.html"><span class="t">Coach view</span><span class="d">Morning flags and a note from your coach</span><span class="go">›</span></a><a class="card" href="brain.html"><span class="t">Athlete OS</span><span class="d">Every workout as a glowing 3D graph</span><span class="go">›</span></a>
+</div>
+<script>
+const D = {"built":"2026-10-29 07:14","today":"2026-10-29","race":"2027-04-25","readiness":{"date":"2026-10-29","score":100,"lvl":"good","factors":[{"k":"Resting HR","v":"43 bpm","note":"-5 vs your normal 48","lvl":"good","w":35},{"k":"Sleep","v":"7h 52m","note":"7 h+ is the target","lvl":"good","w":25},{"k":"Body Battery","v":"90","note":"overnight charge","lvl":"good","w":20},{"k":"Load ramp","v":"0.65\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},"history":[{"date":"2026-10-16","score":100,"lvl":"good","factors":[{"k":"Resting HR","v":"49 bpm","note":"+0 vs your normal 48","lvl":"good","w":35},{"k":"Sleep","v":"8h 31m","note":"7 h+ is the target","lvl":"good","w":25},{"k":"Body Battery","v":"67","note":"overnight charge","lvl":"good","w":20},{"k":"Load ramp","v":"0.00\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-17","score":56,"lvl":"critical","factors":[{"k":"Resting HR","v":"61 bpm","note":"+12 vs your normal 49","lvl":"critical","w":35},{"k":"Sleep","v":"7h 05m","note":"7 h+ is the target","lvl":"good","w":25},{"k":"Body Battery","v":"18","note":"overnight charge","lvl":"critical","w":20},{"k":"Load ramp","v":"0.00\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-18","score":86,"lvl":"good","factors":[{"k":"Resting HR","v":"53 bpm","note":"+4 vs your normal 50","lvl":"warning","w":35},{"k":"Sleep","v":"9h 04m","note":"7 h+ is the target","lvl":"good","w":25},{"k":"Body Battery","v":"55","note":"overnight charge","lvl":"good","w":20},{"k":"Load ramp","v":"0.00\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-19","score":100,"lvl":"good","factors":[{"k":"Resting HR","v":"47 bpm","note":"-3 vs your normal 50","lvl":"good","w":35},{"k":"Sleep","v":"8h 28m","note":"7 h+ is the target","lvl":"good","w":25},{"k":"Body Battery","v":"97","note":"overnight charge","lvl":"good","w":20},{"k":"Load ramp","v":"0.00\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-20","score":100,"lvl":"good","factors":[{"k":"Resting HR","v":"42 bpm","note":"-8 vs your normal 50","lvl":"good","w":35},{"k":"Sleep","v":"9h 36m","note":"7 h+ is the target","lvl":"good","w":25},{"k":"Body Battery","v":"100","note":"overnight charge","lvl":"good","w":20},{"k":"Load ramp","v":"0.00\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-21","score":100,"lvl":"good","factors":[{"k":"Resting HR","v":"45 bpm","note":"-4 vs your normal 49","lvl":"good","w":35},{"k":"Sleep","v":"9h 09m","note":"7 h+ is the target","lvl":"good","w":25},{"k":"Body Battery","v":"89","note":"overnight charge","lvl":"good","w":20},{"k":"Load ramp","v":"0.44\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-22","score":100,"lvl":"good","factors":[{"k":"Resting HR","v":"46 bpm","note":"-2 vs your normal 48","lvl":"good","w":35},{"k":"Sleep","v":"8h 38m","note":"7 h+ is the target","lvl":"good","w":25},{"k":"Body Battery","v":"99","note":"overnight charge","lvl":"good","w":20},{"k":"Load ramp","v":"0.44\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-23","score":100,"lvl":"good","factors":[{"k":"Load ramp","v":"0.46\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-24","score":81,"lvl":"good","factors":[{"k":"Resting HR","v":"51 bpm","note":"+4 vs your normal 47","lvl":"warning","w":35},{"k":"Body Battery","v":"62","note":"overnight charge","lvl":"good","w":20},{"k":"Load ramp","v":"0.46\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-25","score":100,"lvl":"good","factors":[{"k":"Resting HR","v":"45 bpm","note":"-3 vs your normal 48","lvl":"good","w":35},{"k":"Sleep","v":"9h 22m","note":"7 h+ is the target","lvl":"good","w":25},{"k":"Body Battery","v":"96","note":"overnight charge","lvl":"good","w":20},{"k":"Load ramp","v":"0.46\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-26","score":80,"lvl":"good","factors":[{"k":"Resting HR","v":"45 bpm","note":"-2 vs your normal 47","lvl":"good","w":35},{"k":"Sleep","v":"5h 33m","note":"7 h+ is the target","lvl":"critical","w":25},{"k":"Body Battery","v":"71","note":"overnight charge","lvl":"good","w":20},{"k":"Load ramp","v":"0.46\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-27","score":100,"lvl":"good","factors":[{"k":"Resting HR","v":"43 bpm","note":"-4 vs your normal 47","lvl":"good","w":35},{"k":"Sleep","v":"10h 21m","note":"7 h+ is the target","lvl":"good","w":25},{"k":"Body Battery","v":"86","note":"overnight charge","lvl":"good","w":20},{"k":"Load ramp","v":"0.46\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-28","score":64,"lvl":"critical","factors":[{"k":"Resting HR","v":"52 bpm","note":"+5 vs your normal 47","lvl":"critical","w":35},{"k":"Sleep","v":"8h 12m","note":"7 h+ is the target","lvl":"good","w":25},{"k":"Body Battery","v":"41","note":"overnight charge","lvl":"warning","w":20},{"k":"Load ramp","v":"0.65\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]},{"date":"2026-10-29","score":100,"lvl":"good","factors":[{"k":"Resting HR","v":"43 bpm","note":"-5 vs your normal 48","lvl":"good","w":35},{"k":"Sleep","v":"7h 52m","note":"7 h+ is the target","lvl":"good","w":25},{"k":"Body Battery","v":"90","note":"overnight charge","lvl":"good","w":20},{"k":"Load ramp","v":"0.65\u00d7","note":"last 7 days vs your 4-week average","lvl":"good","w":20}]}],"days":[{"date":"2026-10-26","dow":"Mon","kind":"rest","title":"\u2014","km":0,"gym":null,"sauna":null,"ran":null,"gymDone":false,"status":"rest","week":0,"phase":"Return to run","advice":"Rest day. Walk, stretch, sleep."},{"date":"2026-10-27","dow":"Tue","kind":"rest","title":"\u2014","km":0,"gym":null,"sauna":null,"ran":6.0,"gymDone":false,"pace":"6:41","hr":160,"above":83,"status":"extra","week":0,"phase":"Return to run","advice":"Rest day. Walk, stretch, sleep."},{"date":"2026-10-28","dow":"Wed","kind":"rest","title":"Rest (resting HR was up)","km":0,"gym":null,"sauna":null,"ran":null,"gymDone":false,"status":"rest","week":0,"phase":"Return to run","advice":"Rest day. Walk, stretch, sleep."},{"date":"2026-10-29","dow":"Thu","kind":"easy","title":"Easy 6:09\u20136:46, or rest if resting HR is still 5+ above normal","km":5,"gym":null,"sauna":null,"ran":null,"gymDone":false,"status":"pending","week":0,"phase":"Return to run","advice":"All systems green. Run it as planned."},{"date":"2026-10-30","dow":"Fri","kind":"rest","title":"Rest","km":0,"gym":"intro","sauna":null,"ran":null,"gymDone":false,"status":"upcoming","week":0,"phase":"Return to run","advice":"Rest day. Walk, stretch, sleep."},{"date":"2026-10-31","dow":"Sat","kind":"easy","title":"Easy 6:09\u20136:46","km":5,"gym":null,"sauna":15,"ran":null,"gymDone":false,"status":"upcoming","week":0,"phase":"Return to run","advice":"All systems green. Run it as planned."},{"date":"2026-11-01","dow":"Sun","kind":"easy","title":"Easy 6:09\u20136:46","km":5,"gym":null,"sauna":null,"ran":null,"gymDone":false,"status":"upcoming","week":0,"phase":"Return to run","advice":"All systems green. Run it as planned."},{"date":"2026-11-02","dow":"Mon","kind":"easy","title":"Easy 6:09\u20136:46","km":5,"gym":"A","sauna":15,"ran":null,"gymDone":false,"status":"upcoming","week":1,"phase":"Base","advice":"All systems green. Run it as planned."},{"date":"2026-11-03","dow":"Tue","kind":"strides","title":"Easy 6:09\u20136:46 + 6\u00d720 s strides: fast but relaxed, walk back to recover","km":5,"gym":null,"sauna":null,"ran":null,"gymDone":false,"status":"upcoming","week":1,"phase":"Base","advice":"All systems green. Run it as planned."},{"date":"2026-11-04","dow":"Wed","kind":"easy","title":"Easy 6:09\u20136:46","km":5,"gym":null,"sauna":15,"ran":null,"gymDone":false,"status":"upcoming","week":1,"phase":"Base","advice":"All systems green. Run it as planned."},{"date":"2026-11-05","dow":"Thu","kind":"strides","title":"Easy 6:09\u20136:46 + 6\u00d720 s strides","km":5,"gym":"B","sauna":null,"ran":null,"gymDone":false,"status":"upcoming","week":1,"phase":"Base","advice":"All systems green. Run it as planned."},{"date":"2026-11-06","dow":"Fri","kind":"rest","title":"Rest","km":0,"gym":null,"sauna":null,"ran":null,"gymDone":false,"status":"upcoming","week":1,"phase":"Base","advice":"Rest day. Walk, stretch, sleep."},{"date":"2026-11-07","dow":"Sat","kind":"easy","title":"Easy 6:09\u20136:46","km":5,"gym":null,"sauna":null,"ran":null,"gymDone":false,"status":"upcoming","week":1,"phase":"Base","advice":"All systems green. Run it as planned."},{"date":"2026-11-08","dow":"Sun","kind":"long","title":"Long run 6 km, easy","km":6,"gym":null,"sauna":null,"ran":null,"gymDone":false,"status":"upcoming","week":1,"phase":"Base","advice":"All systems green. Run it as planned."}],"checkpoints":[{"date":"2026-11-17","name":"5 km time trial","metres":5000,"target":"23:39","now":"24:15","result":null},{"date":"2026-12-15","name":"5 km time trial","metres":5000,"target":"22:37","now":"24:15","result":null},{"date":"2027-01-12","name":"10 km time trial","metres":10000,"target":"44:56","now":"50:20","result":null},{"date":"2027-02-14","name":"Half marathon","metres":21097.5,"target":"1:34:52","now":"1:51:37","result":null},{"date":"2027-03-09","name":"10 km time trial","metres":10000,"target":"41:28","now":"50:20","result":null},{"date":"2027-04-25","name":"Marathon","metres":42195,"target":"3:00:00","now":"3:51:03","result":null}],"predictM":"3:51:03","paces":{"E":"6:09\u20136:46","M":"5:29","T":"5:07","I":"4:43","R":"4:25","HM":"5:17"},"cap":143,"vdot":39.7,"goalVdot":53.5};
+const LVL = { good: ["var(--good)", "✓", "GO"], warning: ["var(--warning)", "!", "CAUTION"], critical: ["var(--critical)", "✕", "RECOVER"] };
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const md = s => new Date(s + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const wd = s => new Date(s + "T12:00").toLocaleDateString("en-US", { weekday: "long" });
+const now = new Date(), today = iso(now);
+const hour = now.getHours();
+document.getElementById("sub").textContent =
+  `Good ${hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening"}, Sir · ${wd(today)}, ${md(today)} · Garmin data ${md(D.built.slice(0, 10))} ${D.built.slice(11)}`;
+
+const t = D.days.find(d => d.date === today);
+const R = D.readiness && D.readiness.date === today ? D.readiness : null;
+
+// ---- today
+(() => {
+  const el = document.getElementById("today");
+  if (!t) { el.innerHTML = `<div class="box"><div class="k"><span>Today</span></div><div class="wo">No plan day found for today.</div></div>`; return; }
+  const hard = ["threshold", "intervals", "hills", "marathon", "test", "race"].includes(t.kind);
+  const chips = [];
+  if (t.km) chips.push(`<span class="chip"><b>${t.km} km</b></span>`);
+  if (t.km && !hard) chips.push(`<span class="chip">Easy <b>${D.paces.E}</b>/km</span>`, `<span class="chip">HR under <b>${D.cap}</b></span>`);
+  if (t.gym) chips.push(`<span class="chip${t.gymDone ? " ok" : ""}">Gym <b>${t.gym}</b>${t.gymDone ? " ✓" : ""}</span>`);
+  if (t.sauna) chips.push(`<span class="chip">Sauna <b>${t.sauna} min</b></span>`);
+  let result = "";
+  if (t.ran) {
+    const st = t.status === "done" ? "good" : t.status === "short" ? "warning" : "good";
+    const cap = t.capOk === undefined ? "" : t.capOk
+      ? ` · <b>${t.above}%</b> above ${D.cap} bpm, nicely easy`
+      : ` · <b>${t.above}%</b> above ${D.cap} bpm: too hard for an easy day`;
+    result = `<div class="result" style="--lc:${LVL[st][0]}"><span class="ic">${LVL[st][1]}</span>${t.status === "short" ? "Short" : t.status === "extra" ? "Extra run" : "Done"}: <b>${t.ran} km</b> at ${t.pace}/km, avg HR ${t.hr}${cap}</div>`;
+  }
+  let adv = "";
+  if (!t.ran && R) adv = `<div class="advice" style="--lc:${LVL[R.lvl][0]}"><span class="tag">${LVL[R.lvl][2]}</span>${t.advice}</div>`;
+  else if (!t.ran && t.km) adv = `<div class="advice"><span class="tag" style="color:var(--hud)">READINESS</span>Waiting for this morning's Garmin sync (6 am). Check resting HR before a hard session.</div>`;
+  el.innerHTML = `<div class="box"><div class="k"><span>Today · ${md(today)}</span><span>Week ${t.week} · ${t.phase}</span></div>
+    <div class="wo">${t.kind === "rest" ? "Rest" : t.title}</div><div class="chips">${chips.join("")}</div>${result}${adv}</div>`;
+})();
+
+// ---- readiness
+(() => {
+  const el = document.getElementById("ready");
+  const r = R || D.readiness;
+  if (!r) return;
+  const [c, , lab] = LVL[r.lvl];
+  const circ = 2 * Math.PI * 38;
+  const rows = r.factors.map(f => `<div class="f" style="--lc:${LVL[f.lvl][0]}"><span class="n"><span class="ic">${LVL[f.lvl][1]}</span>${f.k}</span><span class="v">${f.v}</span><span class="s">${f.note}</span></div>`).join("");
+  const missing = ["Resting HR", "Sleep", "Body Battery"].filter(k => !r.factors.some(f => f.k === k));
+  const strip = D.history.map(h => h ? `<i style="background:${LVL[h.lvl][0]};opacity:${h.date === r.date ? 1 : .55}" title="${md(h.date)}: ${h.score} · ${LVL[h.lvl][2]}"></i>` : `<i title="no data"></i>`).join("");
+  el.innerHTML = `<div class="box"><div class="k"><span>Readiness</span><span>${r.date === today ? "this morning" : "as of " + md(r.date)}</span></div>
+    <div class="ready"><svg class="score" viewBox="0 0 92 92"><circle cx="46" cy="46" r="38" fill="none" stroke="var(--grid)" stroke-width="7"/>
+      <circle cx="46" cy="46" r="38" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${circ * r.score / 100} ${circ}" transform="rotate(-90 46 46)"/>
+      <text class="big" x="46" y="50" text-anchor="middle">${r.score}</text><text class="lab" x="46" y="66" text-anchor="middle">${lab}</text></svg>
+      <div>${rows}</div></div>
+    ${missing.length ? `<div class="strip-l" style="margin-top:8px"><span>${missing.join(", ")} not synced yet; left out of the score.</span></div>` : ""}
+    <div class="strip">${strip}</div><div class="strip-l"><span>14 days ago</span><span>today</span></div></div>`;
+})();
+
+// ---- this week
+(() => {
+  if (!t) return;
+  const wk = D.days.filter(d => d.week === t.week);
+  const icon = { done: ["var(--good)", "✓"], short: ["var(--warning)", "◐"], missed: ["var(--critical)", "✕"], extra: ["var(--hud)", "+"],
+                 rest: ["var(--muted)", "–"], pending: ["var(--hud)", "●"], upcoming: ["var(--muted)", "○"] };
+  const cells = wk.map(d => {
+    const [c, s] = icon[d.status];
+    const warn = d.capOk === false ? `<div style="font-size:11px;color:var(--warning)">HR high</div>` : "";
+    return `<div class="day${d.date === today ? " now" : ""}" title="${d.title}"><div class="dw">${d.dow.toUpperCase()}</div><div class="km">${d.km || "–"}</div><div class="st" style="color:${c}">${s}</div>${warn}</div>`;
+  }).join("");
+  const due = wk.filter(d => d.km && ["done", "short", "missed"].includes(d.status));
+  const done = due.filter(d => d.status === "done").length;
+  const kmPlan = wk.reduce((s, d) => s + (d.km || 0), 0), kmRan = wk.reduce((s, d) => s + (d.ran || 0), 0);
+  const easy = wk.filter(d => d.capOk !== undefined);
+  const easyOk = easy.filter(d => d.capOk).length;
+  document.getElementById("week").innerHTML = `<div class="box"><div class="k"><span>This week · W${t.week}</span><span>${t.phase}</span></div>
+    <div class="week">${cells}</div>
+    <div class="wsum">${due.length ? `<b>${done} of ${due.length}</b> runs done so far` : "No runs due yet"} · <b>${kmRan.toFixed(1)}</b> of ${kmPlan.toFixed(1)} km${easy.length ? ` · easy runs under ${D.cap} bpm: <b>${easyOk} of ${easy.length}</b>` : ""}</div>
+    <div class="wsum" style="color:var(--muted);font-size:13px">✓ done · ◐ short · ✕ missed · + extra · ● today · ○ upcoming</div></div>`;
+})();
+
+// ---- on track
+(() => {
+  const next = D.checkpoints.find(c => c.date >= today);
+  const last = [...D.checkpoints].reverse().find(c => c.date < today && c.result && c.result.status === "ok");
+  const strip = s => s.replace(/^0:/, "");
+  let p = "";
+  if (next) p += `Next checkpoint <b>${wd(next.date)} ${md(next.date)}</b>: ${next.name}. On the 3:00 path: <b>${next.target}</b>. Your fitness now: ${next.now}.`;
+  if (last) p += ` Last: ${last.name} in <b>${strip(last.result.time)}</b> (path ${last.target}).`;
+  document.getElementById("track").innerHTML = `<div class="box track"><div class="k"><span>On track for 3:00?</span><span>${Math.round((new Date(D.race + "T12:00") - now) / 864e5)} days</span></div>
+    <div class="row"><span><span class="big">${D.predictM.replace(/:\d\d$/, "")}</span> <span class="goal">predicted</span></span><span class="goal">goal <b style="color:var(--text)">3:00</b></span></div>
+    <p>${p}</p><p><a href="progress.html">See the trend and every checkpoint ›</a></p></div>`;
+})();
+</script>
+</body>
 </html>

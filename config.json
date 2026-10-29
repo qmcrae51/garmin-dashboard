@@ -1,16 +1,36 @@
 {
   "units": "km",
   "races": [
-    {"name": "Half Marathon", "date": "2027-02-14", "distance_km": 21.1},
-    {"name": "Marathon", "date": "2027-04-25", "distance_km": 42.2, "alt_dates": ["2027-05-02", "2027-05-08"]}
+    {
+      "name": "Half Marathon",
+      "date": "2027-02-14",
+      "distance_km": 21.1
+    },
+    {
+      "name": "Marathon",
+      "date": "2027-04-25",
+      "distance_km": 42.2,
+      "alt_dates": [
+        "2027-05-02",
+        "2027-05-08"
+      ]
+    }
   ],
-  "weight_goal_lb": {"start": 240, "high": 215, "low": 200},
+  "weight_goal_lb": {
+    "start": 240,
+    "high": 215,
+    "low": 200
+  },
   "weight_log_lb": [
-    {"date": "2026-10-28", "lb": 240}
+    {
+      "date": "2026-10-28",
+      "lb": 240
+    }
   ],
   "training": {
     "marathon": "2027-04-25",
     "plan_start": "2026-11-02",
-    "time_trials": []
+    "time_trials": [],
+    "path_start_vdot": 39.7
   }
 }

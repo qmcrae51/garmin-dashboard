@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#050a10">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>On Track</title>
+<style>
+:root { color-scheme: dark; --bg: #050a10; --card: #0c1622; --card2: #0f1d2c; --hud: #5fe0ff; --hud-dim: rgba(95,224,255,.16);
+  --text: #e6f6ff; --text-2: #9fb6c6; --muted: #6c8191; --grid: #16283a; --axis: #24405a; --run: #1a9ccb;
+  --good: #0ca30c; --warning: #fab219; --critical: #d03b3b;
+  --display: "Orbitron", system-ui, sans-serif; --body: "Rajdhani", -apple-system, system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; background: radial-gradient(900px 500px at 20% -10%, rgba(26,156,203,.22), transparent 60%), var(--bg);
+  color: var(--text); font-family: var(--body); font-size: 16px; padding: max(18px, env(safe-area-inset-top)) 16px 40px; }
+.wrap { max-width: 900px; margin: 0 auto; }
+a { color: var(--hud); text-decoration: none; }
+h1 { font-family: var(--display); font-size: 13px; letter-spacing: .32em; color: var(--hud); margin: 14px 0 2px; text-shadow: 0 0 14px rgba(95,224,255,.5); }
+.sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+.box { background: var(--card); border: 1px solid var(--hud-dim); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; min-width: 0; }
+.k { font-family: var(--display); font-size: 10px; letter-spacing: .24em; color: var(--hud); text-transform: uppercase; margin-bottom: 10px; }
+.hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.hero > div { min-width: 0; }
+.hero .v { font-family: var(--display); font-weight: 700; font-size: 26px; }
+.hero .l { color: var(--muted); font-size: 14px; }
+.verdict { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: var(--card2); border-left: 3px solid var(--lc, var(--hud)); line-height: 1.4; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; color: var(--text-2); font-size: 14px; margin-bottom: 6px; }
+.legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+.legend i.dot { width: 10px; height: 10px; border: 2px solid; border-radius: 50%; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.chart text { font-family: var(--body); font-size: 12px; fill: var(--muted); }
+.tip { position: absolute; pointer-events: none; background: #0a1520; border: 1px solid var(--hud-dim); border-radius: 8px; padding: 6px 9px;
+  font-size: 14px; line-height: 1.35; white-space: nowrap; opacity: 0; transition: opacity .1s; z-index: 2; }
+.note { color: var(--muted); font-size: 14px; line-height: 1.4; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th { text-align: left; font-family: var(--display); font-size: 9px; letter-spacing: .16em; color: var(--muted); font-weight: 500; padding: 6px 6px 6px 0; }
+td { padding: 7px 6px 7px 0; border-top: 1px solid var(--grid); vertical-align: top; }
+td.r, th.r { text-align: right; }
+.ic { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; font-size: 11px; font-weight: 700; color: #050a10; background: var(--lc); margin-right: 4px; vertical-align: -2px; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.tiles > div { background: var(--card2); border-radius: 10px; padding: 12px; min-width: 0; }
+.tiles .v { font-family: var(--display); font-size: 20px; font-weight: 700; }
+.tiles .l { color: var(--muted); font-size: 13px; }
+.scroll { overflow-x: auto; }
+@media (max-width: 560px) {
+  .hero, .tiles { grid-template-columns: 1fr 1fr; }
+  .hero > div:last-child, .tiles > div:last-child { grid-column: 1 / 3; }
+  .hide-s { display: none; }
+}
+</style>
+</head>
+<body><div class="wrap">
+<a href="index.html">‹ Training HQ</a>
+<h1>ON TRACK FOR 3:00?</h1>
+<div class="sub" id="sub"></div>
+
+<div class="box"><div class="k">Marathon · Apr 25, 2027</div><div class="hero" id="hero"></div><div class="verdict" id="verdict"></div></div>
+
+<div class="box"><div class="k">Predicted marathon time, week by week</div>
+  <div class="legend"><span><i style="border-color:var(--run)"></i>Your fitness (from heart rate vs pace)</span><span><i style="border-color:var(--hud);border-top-style:dashed"></i>Path to 3:00</span><span><i class="dot" style="border-color:var(--hud)"></i>Checkpoint target</span><span><i class="dot" style="border-color:var(--good);background:var(--good)"></i>Checkpoint result</span></div>
+  <div class="chart" id="c1"></div>
+  <div class="note">The blue line is a 6-week median of the fitness each steady run implies from its pace and heart rate, adjusted to match your latest checkpoint. It is an estimate, and heat and hills make it read slow. Checkpoints are the real readings: each one resets your plan paces automatically.</div>
+</div>
+
+<div class="box"><div class="k">Checkpoints</div><div class="scroll"><table id="cps"></table></div>
+  <div class="note">“3:00 path” is what you need to run that day to be on schedule. “Fitness now” is what your current fitness predicts. Save each time trial as its own activity on the watch and it is picked up at the next 6 am refresh.</div></div>
+
+<div class="box"><div class="k">Easy-run discipline</div>
+  <div class="tiles" id="tiles"></div>
+  <div class="legend" style="margin-top:14px"><span><i style="border-color:var(--run);border-top-width:8px"></i>Share of easy-run time above <span id="capl"></span> bpm</span><span><i style="border-color:var(--good);border-top-style:dashed"></i>10% target</span></div>
+  <div class="chart" id="c2"></div>
+  <div class="note">80% of marathon training should be truly easy. That builds the aerobic engine without the fatigue, and it is what makes the hard days work. Before the plan starts every run counts here; from Nov 2, only the planned easy runs and long runs.</div>
+</div>
+
+<div class="box"><div class="k">Recent easy runs</div><div class="scroll"><table id="easy"></table></div></div>
+</div>
+
+<script>
+const D = __DATA__;
+const $ = id => document.getElementById(id);
+const md = s => new Date(s + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const hm = m => `${Math.floor(m / 60)}:${String(Math.round(m % 60)).padStart(2, "0")}`;
+const LVL = { good: ["var(--good)", "✓"], warning: ["var(--warning)", "!"], critical: ["var(--critical)", "✕"] };
+$("sub").textContent = `Updated ${md(D.built.slice(0, 10))} ${D.built.slice(11)} · fitness ${D.source}`;
+$("capl").textContent = D.cap;
+
+// ---- hero and verdict
+const days = Math.round((new Date(D.race + "T12:00") - new Date()) / 864e5);
+const gapMin = Math.round(D.predictMin - 180);
+$("hero").innerHTML = `
+  <div><div class="v">${D.predictM.replace(/:\d\d$/, "")}</div><div class="l">predicted today (VDOT ${D.vdot})</div></div>
+  <div><div class="v">${gapMin} min</div><div class="l">to find for 3:00 (VDOT ${D.goalVdot})</div></div>
+  <div><div class="v">${days}</div><div class="l">days to race day</div></div>`;
+const next = D.checkpoints.find(c => !c.result || c.result.status !== "ok");
+let verdict, lc = "var(--hud)";
+if (D.status) {
+  lc = LVL[D.status][0];
+  const word = { good: "On the 3:00 path.", warning: "Slightly behind the 3:00 path.", critical: "Behind the 3:00 path." }[D.status];
+  verdict = `<b>${word}</b> Your latest checkpoint put you ${Math.abs(D.gapV)} VDOT ${D.gapV >= 0 ? "ahead of" : "behind"} where the straight line to 3:00 says you should be.`;
+  if (D.status !== "good") verdict += " That's normal early on. If it is still behind after the half marathon, the realistic goal is the time the half predicts.";
+} else {
+  verdict = `<b>No checkpoint yet.</b> The path to 3:00 starts at VDOT ${D.pathStart} on Nov 2 and climbs to ${D.goalVdot} on race day.`;
+}
+if (next) verdict += ` Next reading: <b>${next.name}, ${md(next.date)}</b>. ${next.target} keeps you on the path.`;
+$("verdict").style.setProperty("--lc", lc);
+$("verdict").innerHTML = verdict;
+
+// ---- shared tooltip helper
+function tipper(box) {
+  const tip = document.createElement("div"); tip.className = "tip"; box.appendChild(tip);
+  return {
+    show(html, x, y) {
+      tip.innerHTML = html; tip.style.opacity = 1;
+      const w = tip.offsetWidth, bw = box.clientWidth;
+      tip.style.left = Math.min(Math.max(0, x - w / 2), bw - w) + "px";
+      tip.style.top = Math.max(0, y - tip.offsetHeight - 12) + "px";
+    },
+    hide() { tip.style.opacity = 0; },
+  };
+}
+const ns = "http://www.w3.org/2000/svg";
+const el = (tag, attrs, parent) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; };
+
+// ---- chart 1: predicted marathon time
+(function () {
+  const box = $("c1");
+  const W = Math.max(320, box.clientWidth), H = W < 500 ? 260 : 300;
+  const m = { l: 44, r: 12, t: 12, b: 28 };
+  const t0 = new Date(D.weeks.find(w => w.v) ? D.weeks.find(w => w.v).w : D.weeks[0].w).getTime() - 0, t1 = new Date(D.race).getTime() + 7 * 864e5;
+  const pts = D.weeks.filter(w => w.m);
+  const all = [...pts.map(w => w.m), ...D.path.map(p => p.m), 175];
+  const lo = 170, hi = Math.ceil(Math.max(...all) / 15) * 15 + 5;
+  const x = d => m.l + (new Date(d).getTime() - t0) / (t1 - t0) * (W - m.l - m.r);
+  const y = v => m.t + (v - lo) / (hi - lo) * (H - m.t - m.b);  // faster times at the top
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}` }, box);
+  for (let v = 180; v <= hi; v += 15) {
+    el("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v === 180 ? "var(--axis)" : "var(--grid)" }, svg);
+    el("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = hm(v);
+  }
+  const start = new Date(t0);
+  for (let d = new Date(start.getFullYear(), start.getMonth() + 1, 1); d.getTime() < t1; d.setMonth(d.getMonth() + (W < 500 ? 2 : 1))) {
+    el("text", { x: x(d), y: H - 8, "text-anchor": "middle" }, svg).textContent = d.toLocaleDateString("en-US", { month: "short" });
+  }
+  const todayX = x(new Date());
+  el("line", { x1: todayX, x2: todayX, y1: m.t, y2: H - m.b, stroke: "var(--axis)", "stroke-dasharray": "2 4" }, svg);
+  el("text", { x: todayX + 4, y: m.t + 10 }, svg).textContent = "today";
+  el("path", { d: D.path.map((p, i) => `${i ? "L" : "M"}${x(p.d)},${y(p.m)}`).join(""), fill: "none", stroke: "var(--hud)", "stroke-width": 2, "stroke-dasharray": "6 5", opacity: .8 }, svg);
+  // fitness line, broken where there is no data
+  let d = "", prev = false;
+  D.weeks.forEach(w => { if (w.m) { d += `${prev ? "L" : "M"}${x(w.w)},${y(w.m)}`; prev = true; } else prev = false; });
+  el("path", { d, fill: "none", stroke: "var(--run)", "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+  const last = pts[pts.length - 1];
+  if (last) el("circle", { cx: x(last.w), cy: y(last.m), r: 4, fill: "var(--run)", stroke: "var(--card)", "stroke-width": 2 }, svg);
+  // checkpoints: hollow target on the path, filled result when there is one
+  D.checkpoints.forEach(c => {
+    const pm = D.path.reduce((a, p) => Math.abs(new Date(p.d) - new Date(c.date)) < Math.abs(new Date(a.d) - new Date(c.date)) ? p : a).m;
+    el("circle", { cx: x(c.date), cy: y(pm), r: 5, fill: "var(--card)", stroke: "var(--hud)", "stroke-width": 2 }, svg);
+    if (c.result && c.result.status === "ok") {
+      el("circle", { cx: x(c.date), cy: y(c.resultM || pm), r: 5, fill: "var(--good)", stroke: "var(--card)", "stroke-width": 2 }, svg);
+    }
+  });
+  el("text", { x: W - m.r, y: y(180) - 6, "text-anchor": "end", fill: "var(--hud)" }, svg).textContent = "3:00 goal";
+  // hover
+  const tip = tipper(box), cross = el("line", { y1: m.t, y2: H - m.b, stroke: "var(--hud)", opacity: 0 }, svg);
+  const rows = [...D.weeks.filter(w => w.m).map(w => ({ d: w.w, fit: w })), ...D.path.map(p => ({ d: p.d, path: p }))].sort((a, b) => a.d < b.d ? -1 : 1);
+  svg.addEventListener("pointermove", e => {
+    const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * W / r.width;
+    const best = rows.reduce((a, b) => Math.abs(x(b.d) - px) < Math.abs(x(a.d) - px) ? b : a);
+    const cp = D.checkpoints.find(c => Math.abs(new Date(c.date) - new Date(best.d)) < 4 * 864e5);
+    cross.setAttribute("x1", x(best.d)); cross.setAttribute("x2", x(best.d)); cross.setAttribute("opacity", .4);
+    let html = `<b>Week of ${md(best.d)}</b>`;
+    if (best.fit) html += `<br>Your fitness: <b>${hm(best.fit.m)}</b> (VDOT ${best.fit.v})`;
+    if (best.path) html += `<br>3:00 path: <b>${hm(best.path.m)}</b> (VDOT ${best.path.v})`;
+    if (cp) html += `<br>${cp.name}: target ${cp.target}${cp.result && cp.result.status === "ok" ? `, ran <b>${cp.result.time.replace(/^0:/, "")}</b>` : ""}`;
+    tip.show(html, x(best.d) * r.width / W, (best.fit ? y(best.fit.m) : y(best.path.m)) * r.height / H);
+  });
+  svg.addEventListener("pointerleave", () => { tip.hide(); cross.setAttribute("opacity", 0); });
+})();
+
+// ---- checkpoint table
+$("cps").innerHTML = `<tr><th>Date</th><th>Checkpoint</th><th class="r">3:00 path</th><th class="r hide-s">Fitness now</th><th class="r">Result</th></tr>` +
+  D.checkpoints.map(c => {
+    let res = "—";
+    const r = c.result;
+    if (r && r.status === "ok") res = `<span style="--lc:var(--good)"><span class="ic">✓</span><b>${r.time.replace(/^0:/, "")}</b></span>`;
+    else if (r && r.status === "easy") res = `<span style="--lc:var(--warning)" title="${r.note}"><span class="ic">!</span>not all-out</span>`;
+    else if (r && r.status === "missing") res = `<span style="--lc:var(--critical)" title="${r.note}"><span class="ic">✕</span>not found</span>`;
+    return `<tr><td>${md(c.date)}</td><td>${c.name}</td><td class="r"><b>${c.target}</b></td><td class="r hide-s">${c.now}</td><td class="r">${res}</td></tr>`;
+  }).join("");
+
+// ---- easy-run tiles
+const C = D.compliance;
+$("tiles").innerHTML = `
+  <div><div class="v">${D.capPaceNow || "—"}</div><div class="l">pace at ${D.cap} bpm now${D.capPaceThen ? ` (was ${D.capPaceThen} 8 weeks ago)` : ""}</div></div>
+  <div><div class="v">${C.capped ? `${C.capOk}/${C.capped}` : "—"}</div><div class="l">planned easy runs under ${D.cap} bpm since Nov 2</div></div>
+  <div><div class="v">${C.planned ? `${C.runs}/${C.planned}` : "—"}</div><div class="l">planned runs completed since Nov 2</div></div>`;
+
+// ---- chart 2: weekly share above the cap
+(function () {
+  const box = $("c2");
+  const W = Math.max(320, box.clientWidth), H = 200, m = { l: 36, r: 8, t: 10, b: 26 };
+  const data = D.weeklyCap, n = data.length, bw = (W - m.l - m.r) / n;
+  const y = v => m.t + (1 - v / 100) * (H - m.t - m.b);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}` }, box);
+  [0, 25, 50, 75, 100].forEach(v => {
+    el("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v ? "var(--grid)" : "var(--axis)" }, svg);
+    el("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = v + "%";
+  });
+  data.forEach((w, i) => {
+    const x0 = m.l + i * bw;
+    if (w.pct !== null) {
+      const top = y(Math.max(w.pct, 1.5)), h = y(0) - top;
+      el("path", { d: `M${x0 + 2},${y(0)}V${top + 4}q0,-4 4,-4H${x0 + bw - 6}q4,0 4,4V${y(0)}Z`, fill: "var(--run)" }, svg);
+    }
+    if (i % (W < 500 ? 4 : 2) === 0) el("text", { x: x0 + bw / 2, y: H - 8, "text-anchor": "middle" }, svg).textContent = md(w.w);
+  });
+  el("line", { x1: m.l, x2: W - m.r, y1: y(10), y2: y(10), stroke: "var(--good)", "stroke-dasharray": "5 4", "stroke-width": 2 }, svg);
+  const tip = tipper(box);
+  svg.addEventListener("pointermove", e => {
+    const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * W / r.width;
+    const i = Math.min(n - 1, Math.max(0, Math.floor((px - m.l) / bw))), w = data[i];
+    tip.show(`<b>Week of ${md(w.w)}</b><br>${w.pct === null ? "No easy runs" : `${w.pct}% above ${D.cap} bpm · ${w.n} run${w.n === 1 ? "" : "s"}`}`,
+      (m.l + (i + .5) * bw) * r.width / W, y(w.pct || 0) * r.height / H);
+  });
+  svg.addEventListener("pointerleave", () => tip.hide());
+})();
+
+// ---- recent easy runs
+$("easy").innerHTML = `<tr><th>Date</th><th class="r">km</th><th class="r">Pace</th><th class="r">Avg HR</th><th class="r">Above ${D.cap}</th><th class="hide-s">Type</th></tr>` +
+  D.easyRuns.map(r => {
+    const ok = r.above <= 10;
+    return `<tr><td>${md(r.date)}</td><td class="r">${r.km}</td><td class="r">${r.pace}</td><td class="r">${r.hr || "—"}</td>
+      <td class="r"><span style="--lc:${ok ? "var(--good)" : "var(--warning)"}"><span class="ic">${ok ? "✓" : "!"}</span>${r.above}%</span></td><td class="hide-s">${r.label}</td></tr>`;
+  }).join("");
+</script>
+</body>
+</html>

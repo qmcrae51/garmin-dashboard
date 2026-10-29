@@ -66,8 +66,10 @@ def paces(v):
 # Each week: phase, easy km per easy day, Q1 (Tue), Q2 (Thu, None = easy + strides), long run.
 # Quality entries are (kind, title, km). Paces in braces are filled from the current VDOT.
 S = ("strides", "Easy {E} + 6×20 s strides: fast but relaxed, walk back to recover", None)
-TT5 = ("test", "CHECKPOINT · 5 km time trial: 2 km easy + 4 strides, 5 km all-out on a flat route, 1 km easy", 8)
-TT10 = ("test", "CHECKPOINT · 10 km time trial: 2 km easy + 4 strides, 10 km all-out, 1 km easy", 13)
+TT5 = ("test", "CHECKPOINT · 5 km time trial: 2 km easy + 4 strides, 5 km all-out on a flat route, 1 km easy. "
+             "Save the 5 km as its own activity on the watch and your paces update automatically", 8)
+TT10 = ("test", "CHECKPOINT · 10 km time trial: 2 km easy + 4 strides, 10 km all-out, 1 km easy. "
+              "Save the 10 km as its own activity on the watch and your paces update automatically", 13)
 
 
 def q(kind, title, km):
@@ -185,7 +187,87 @@ def week0(start):
             "heat": False, "days": days, "km": sum(x["km"] for x in days)}
 
 
-def build():
+def to_minutes(text):
+    parts = [float(x) for x in text.split(":")]  # "MM:SS" or "H:MM:SS"
+    return sum(x * 60 ** (len(parts) - 2 - i) for i, x in enumerate(parts))
+
+
+def _effort_minutes(a):
+    return ((a.get("hrTimeInZone_4") or 0) + (a.get("hrTimeInZone_5") or 0)) / 60
+
+
+def detect_checkpoints(weeks, acts):
+    """Find time trials and races in the Garmin data on the plan's checkpoint days.
+
+    5 km: the fastest 5 km inside any run that day. 10 km and the half: a run of that distance
+    saved as its own activity. A run only counts if it was a hard effort (enough time in zones 4-5)."""
+    by_date = {}
+    for a in acts:
+        if "run" in a["activityType"]["typeKey"] and "treadmill" not in a["activityType"]["typeKey"]:
+            by_date.setdefault(a["startTimeLocal"][:10], []).append(a)
+    found = []
+    for w in weeks:
+        for d in w["days"]:
+            if d["kind"] not in ("test", "race") or day(d["date"]) > TODAY:
+                continue
+            runs = by_date.get(d["date"], [])
+            if d["kind"] == "race":
+                target = 42195 if d["km"] > 40 else 21097.5
+                label = "Marathon" if target > 40000 else "Half marathon"
+            else:
+                target = 10000 if "10 km" in d["title"] else 5000
+                label = f"{target // 1000} km time trial"
+            best = None
+            for a in runs:
+                dist = a.get("distance") or 0
+                if target == 5000 and a.get("fastestSplit_5000"):
+                    m, metres = a["fastestSplit_5000"] / 60, 5000
+                elif 0.97 * target <= dist <= 1.08 * target:
+                    m, metres = a["duration"] / 60, dist
+                else:
+                    continue
+                v = vdot(metres, m)
+                if best is None or v > best["vdot"]:
+                    best = {"vdot": round(v, 1), "minutes": m, "metres": metres, "effort": _effort_minutes(a)}
+            item = {"date": d["date"], "label": label, "planned": True}
+            if best and best["effort"] >= 0.4 * best["minutes"]:
+                item.update(status="ok", vdot=best["vdot"], time=hms(best["minutes"] * target / best["metres"]))
+            elif best:
+                item.update(status="easy", note=f"Run found, but only {best['effort']:.0f} min in zones 4–5: it doesn't look all-out, so paces were not changed")
+            else:
+                item.update(status="missing", note=("No run of the right distance found. Log it in config.json if you ran it"
+                                                     if runs else "No run recorded that day"))
+            found.append(item)
+    return found
+
+
+def current_fitness(cfg, acts, weeks):
+    """VDOT for the paces: the latest checkpoint (manual or detected), else a provisional estimate."""
+    tr = cfg.get("training", {})
+    checks = detect_checkpoints(weeks, acts)
+    results = [{"date": c["date"], "vdot": c["vdot"], "source": f"{c['label']} in {c['time']} on {c['date']} (from your watch)"}
+               for c in checks if c.get("status") == "ok"]
+    for t in tr.get("time_trials", []):
+        results.append({"date": t["date"], "vdot": round(vdot(t["distance_km"] * 1000, to_minutes(t["time"])), 1),
+                        "source": f"{t['distance_km']:g} km in {t['time']} on {t['date']}"})
+    if results:
+        latest = max(results, key=lambda r: r["date"])
+        return latest["vdot"], latest["source"], checks, latest["date"]
+    best = None
+    for a in acts:
+        f5 = a.get("fastestSplit_5000")
+        if ("run" in a["activityType"]["typeKey"] and "treadmill" not in a["activityType"]["typeKey"]
+                and f5 and (TODAY - day(a["startTimeLocal"])).days <= 365
+                and f5 >= 0.7 * (a["duration"] / (a["distance"] / 1000)) * 5):
+            best = min(best or 1e9, f5)
+    raw = vdot(5000, best / 60) if best else 38
+    source = (f"provisional: best 5 km split {int(best // 60)}:{int(best % 60):02d} (VDOT {raw:.1f}) minus 2 for recent light training"
+              if best else "provisional estimate")
+    return round(raw - 2, 1), source, checks, None
+
+
+def compute():
+    """Everything the plan page shows, also used by the home page and the progress page."""
     cfg = json.load(open(os.path.join(ROOT, "config.json")))
     tr = cfg.setdefault("training", {})
     race_day = day(tr.get("marathon", "2027-04-25"))
@@ -193,31 +275,10 @@ def build():
     acts = load("activities.json", [])
     zones = load("hr_zones.json", [])
 
-    # current fitness
-    tts = sorted(tr.get("time_trials", []), key=lambda t: t["date"])
-    if tts:
-        t = tts[-1]
-        parts = [float(x) for x in t["time"].split(":")]  # "MM:SS" or "H:MM:SS"
-        minutes = sum(p * 60 ** (len(parts) - 2 - i) for i, p in enumerate(parts))
-        v = vdot(t["distance_km"] * 1000, minutes)
-        source = f"{t['distance_km']:g} km in {t['time']} on {t['date']}"
-    else:
-        best = None
-        for a in acts:
-            f5 = a.get("fastestSplit_5000")
-            if ("run" in a["activityType"]["typeKey"] and "treadmill" not in a["activityType"]["typeKey"]
-                    and f5 and (TODAY - day(a["startTimeLocal"])).days <= 365
-                    and f5 >= 0.7 * (a["duration"] / (a["distance"] / 1000)) * 5):
-                best = min(best or 1e9, f5)
-        raw = vdot(5000, best / 60) if best else 38
-        v = raw - 2
-        source = (f"provisional: best 5 km split {int(best // 60)}:{int(best % 60):02d} (VDOT {raw:.1f}) minus 2 for recent light training"
-                  if best else "provisional estimate")
-    v = round(v, 1)
+    weeks = [week0(start)] + build_weeks(start)
+    v, source, checks, anchor = current_fitness(cfg, acts, weeks)
     P = paces(v)
     goal_v = vdot(42195, 180)
-
-    weeks = [week0(start)] + build_weeks(start)
     for w in weeks:
         for d in w["days"]:
             d["title"] = d["title"].format(**P)
@@ -241,19 +302,24 @@ def build():
     sub3 = {"5K": hms(race_minutes(goal_v, 5000)), "10K": hms(race_minutes(goal_v, 10000)),
             "HM": hms(race_minutes(goal_v, 21097.5))}
 
-    payload = {
+    return {
         "today": TODAY.isoformat(), "race": race_day.isoformat(), "vdot": v, "source": source, "paces": P,
+        "anchor": anchor, "checkpoints": checks,
         "predict": {"5K": hms(race_minutes(v, 5000)), "10K": hms(race_minutes(v, 10000)),
                     "HM": hms(race_minutes(v, 21097.5)), "M": hms(race_minutes(v, 42195))},
         "goalVdot": round(goal_v, 1), "sub3": sub3, "ladder": ladder, "easyCap": easy_cap,
         "weeks": weeks,
     }
+
+
+def build():
+    payload = compute()
     data = json.dumps(payload, separators=(",", ":")).replace("</", "<\\/")
     with open(os.path.join(ROOT, "plan_template.html")) as f:
         html = f.read().replace("__DATA__", data)
     with open(OUT, "w") as f:
         f.write(html)
-    print(f"Training plan written: {OUT}  (VDOT {v}, marathon prediction {payload['predict']['M']})")
+    print(f"Training plan written: {OUT}  (VDOT {payload['vdot']}, marathon prediction {payload['predict']['M']})")
 
 
 if __name__ == "__main__":

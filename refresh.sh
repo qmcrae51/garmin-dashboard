@@ -8,6 +8,7 @@ python3 commander.py
 python3 coach.py
 python3 brain.py
 python3 plan.py
+python3 insights.py
 python3 hub.py
 
 # Publish the pages to GitHub Pages (your key and data/ are in .gitignore and never uploaded)
@@ -19,5 +20,5 @@ fi
 
 # --quiet is used by the 6 am schedule: rebuild and publish without opening browser tabs
 if [ "$1" != "--quiet" ]; then
-  open dashboard.html commander.html coach.html brain.html plan.html
+  open index.html progress.html dashboard.html commander.html coach.html brain.html plan.html
 fi
