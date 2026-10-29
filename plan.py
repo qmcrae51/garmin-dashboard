@@ -76,7 +76,7 @@ def q(kind, title, km):
 
 WEEKS = [
     # n, phase, easy, Q1, Q2, (long km, long note)
-    (1, "Base", 2.5, (*S[:2], 3.5), None, (5, "")),
+    (1, "Base", 2.5, (*S[:2], 3.5), None, (6, "")),
     (2, "Base", 3, (*S[:2], 4), None, (6.5, "")),
     (3, "Base", 3, TT5, None, (6.5, "")),
     (4, "Base · down", 3, q("hills", "8×30 s hill sprints (steep, hard not all-out, walk down) inside an easy run", 5), None, (6, "")),
@@ -102,6 +102,7 @@ WEEKS = [
     (24, "Taper", 4.5, q("threshold", "3×1.6 km @ T {T} with 90 s jog", 9), q("marathon", "6 km @ M {M} inside 10 km", 10), (16, "")),
     (25, "Race week", None, None, None, None),
 ]
+MIN_RUN_KM = 5
 HEAT_BLOCK = {12, 13, 14, 21, 22, 23}  # 3-week heat blocks before the half and the marathon
 
 
@@ -118,11 +119,11 @@ def gym_for(n, phase):
 
 def sauna_for(n):
     if n <= 2:
-        return {"Mon": 12, "Wed": 12}
+        return {"Mon": 15, "Wed": 15}
     if n == 15:
         return {"Mon": 20, "Wed": 15}
     if n == 25:
-        return {"Mon": 15, "Wed": 10}
+        return {"Mon": 15, "Wed": 15}
     if n in HEAT_BLOCK:
         return {"Mon": 30, "Wed": 30, "Fri": 25, "Sat": 25}
     return {"Mon": 25, "Wed": 25, "Sat": 20}
@@ -138,14 +139,14 @@ def build_weeks(start):
             days = {
                 "Mon": ("easy", "Easy {E}", 6), "Tue": ("threshold", "3×1 km @ T {T} with 2 min jog", 8),
                 "Wed": ("easy", "Easy {E}", 6), "Thu": ("strides", "Easy {E} + 4 strides", 5),
-                "Fri": ("rest", "Rest", 0), "Sat": ("easy", "Shake-out: 20 min very easy", 3),
+                "Fri": ("rest", "Rest", 0), "Sat": ("easy", "Shake-out: 5 km very easy", 5),
                 "Sun": ("race", "HALF MARATHON · CHECKPOINT. Start at {HM}/km; if you feel good, pick it up after 15 km", 23.1),
             }
         elif n == 25:
             days = {
                 "Mon": ("easy", "Easy {E}", 5), "Tue": ("marathon", "3×1.6 km @ M {M} + 4 strides", 8),
-                "Wed": ("easy", "Easy {E}", 5), "Thu": ("strides", "Easy {E} + 4 strides", 4),
-                "Fri": ("rest", "Rest · carb-load starts (10–12 g/kg/day)", 0), "Sat": ("easy", "Shake-out: 15–20 min very easy · carb-load", 3),
+                "Wed": ("easy", "Easy {E}", 5), "Thu": ("strides", "Easy {E} + 4 strides", 5),
+                "Fri": ("rest", "Rest · carb-load starts (10–12 g/kg/day)", 0), "Sat": ("easy", "Shake-out: 5 km very easy · carb-load", 5),
                 "Sun": ("race", "MARATHON. Goal pace set from your checkpoints; fuel 60–90 g carbs per hour", 42.2),
             }
         else:
@@ -157,6 +158,8 @@ def build_weeks(start):
             days["Sat"] = ("easy", "Easy {E}", max(2.5, round(easy * 0.8 * 2) / 2))
             note = f" · {long[1]}" if long[1] else ""
             days["Sun"] = ("long", f"Long run {long[0]} km, easy{note}", long[0])
+        # every run is at least MIN_RUN_KM
+        days = {d: (k, t, max(MIN_RUN_KM, km) if km else km) for d, (k, t, km) in days.items()}
         gym, gym_note = gym_for(n, phase)
         sauna = sauna_for(n)
         weeks.append({
@@ -173,13 +176,13 @@ def week0(start):
     """The days left before week 1."""
     monday = start - dt.timedelta(weeks=1)
     plan = {"Mon": ("rest", "—", 0), "Tue": ("rest", "—", 0), "Wed": ("rest", "Rest (resting HR was up)", 0),
-            "Thu": ("easy", "Easy {E}: 3 km, or rest if resting HR is still 5+ above normal", 3), "Fri": ("rest", "Rest", 0),
-            "Sat": ("easy", "Easy {E}", 4), "Sun": ("easy", "Easy {E}", 5)}
+            "Thu": ("easy", "Easy {E}, or rest if resting HR is still 5+ above normal", 5), "Fri": ("rest", "Rest", 0),
+            "Sat": ("easy", "Easy {E}", 5), "Sun": ("easy", "Easy {E}", 5)}
     days = [{"dow": d, "date": (monday + dt.timedelta(days=i)).isoformat(), "kind": plan[d][0], "title": plan[d][1],
-             "km": plan[d][2], "gym": "intro" if d == "Fri" else None, "sauna": 10 if d == "Sat" else None}
+             "km": plan[d][2], "gym": "intro" if d == "Fri" else None, "sauna": 15 if d == "Sat" else None}
             for i, d in enumerate(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])]
     return {"n": 0, "start": monday.isoformat(), "phase": "Return to run", "gymNote": "Intro: bodyweight session to learn the movements",
-            "heat": False, "days": days, "km": 12}
+            "heat": False, "days": days, "km": sum(x["km"] for x in days)}
 
 
 def build():

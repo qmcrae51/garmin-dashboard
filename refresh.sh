@@ -17,4 +17,7 @@ if ! git diff --cached --quiet; then
   git push -q && echo "Published: https://qmcrae51.github.io/garmin-dashboard/"
 fi
 
-open dashboard.html commander.html coach.html brain.html plan.html
+# --quiet is used by the 6 am schedule: rebuild and publish without opening browser tabs
+if [ "$1" != "--quiet" ]; then
+  open dashboard.html commander.html coach.html brain.html plan.html
+fi
